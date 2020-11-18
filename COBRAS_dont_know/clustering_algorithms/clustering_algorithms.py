@@ -48,24 +48,3 @@ class KMeansClusterAlgorithm(ClusterAlgorithm):
 
         # return the labels as a list of integers
         return km.labels_.astype(np.int)
-
-
-class KmeansClusterWithPostRepresentativeSelection(ClusterAlgorithm):
-    def __init__(self, n_runs=10):
-        self.n_runs = n_runs
-
-    def cluster(self, data, indices, k, ml, cl, seed=None):
-        if seed is not None:
-            km = KMeans(k, n_init=self.n_runs, random_state=seed)
-        else:
-            km = KMeans(k, n_init=self.n_runs)
-
-        km.fit([data[indices, :]])
-
-
-class KmeansClusterPeriRepresentativeSelection(ClusterAlgorithm):
-    def __init__(self, n_runs=10):
-        self.n_runs = n_runs
-
-    def cluster(self, data, indices, k, ml, cl, seed=None):
-        print("todo")
