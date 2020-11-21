@@ -15,3 +15,8 @@ class Querier:
     @abc.abstractmethod
     def query_limit_reached(self):
         return
+
+    @abc.abstractmethod
+    def set_labels_and_data(self, labels=None, data=None):
+        return
+

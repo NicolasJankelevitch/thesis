@@ -25,7 +25,7 @@ class SplitResult(Enum):
 class COBRAS:
     def __init__(self,
                  similarity_pred: bool = False,
-                 randomforest_pred: bool = True,
+                 randomforest_pred: bool = False,
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),

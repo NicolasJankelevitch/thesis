@@ -9,11 +9,13 @@ from datasets import Dataset
 def run_test(run):
     run.run()
 
+
 def run_clustering_task(argument_tuple):
     clustering_task, dataset = argument_tuple
     clustering_task.run(dataset)
 
-def run_clustering_tasks_locally(clustering_tasks, nb_of_cores =3 ):
+
+def run_clustering_tasks_locally(clustering_tasks, nb_of_cores=3):
     dataset_dict = {}
     for dataset in Dataset.datasets(preprocessed=True):
         dataset_dict[dataset.name] = dataset
@@ -30,7 +32,7 @@ def run_clustering_tasks_locally(clustering_tasks, nb_of_cores =3 ):
             clustering_task.run(dataset)
 
 
-def run_tests_from_generator(generator, nb_of_cores = 3):
+def run_tests_from_generator(generator, nb_of_cores=3):
     tests = generator
     if nb_of_cores > 1:
         if len(tests) == 0:

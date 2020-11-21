@@ -36,3 +36,6 @@ class LabelQuerier(Querier):
         else:
             return ConstraintType.CL
 
+    def set_labels_and_data(self, labels=None, data=None):
+        if labels is not None:
+            self.labels = labels

@@ -31,13 +31,14 @@ class WeakQuerier(Querier):
             queries_asked   Counter of already-asked queries
             oracle_type    Type of weak oracle [random, local] (Relaxed oracles paper)
     """
-    #TODO: May be useful to refactor this class, for easier reading. Return number to type
+
+    # TODO: May be useful to refactor this class, for easier reading. Return number to type
 
     def __init__(self, data, labels, maximum_number_of_queries, oracle_type='random',
                  q=1, rho=0.8, nu=1.25, max_prob=0.95):
         super().__init__()
+        self.labels = labels
         self.data = data
-        self.labels = labels#np.array(labels, dtype=int)
         self.max_queries = maximum_number_of_queries
         self.queries_asked = 0
         self.oracle_type = oracle_type
@@ -52,10 +53,6 @@ class WeakQuerier(Querier):
         self.gt_centroids = {}
         self.gt_radius = {}
         # range(int(min(labels)), int(max(labels))+1)
-        for i in np.unique(self.labels):
-            self.gt_centroids[i] = (np.mean(data[labels == i, ], axis=0))
-            max_rad = max(np.linalg.norm(data[labels == i, :] - self.gt_centroids[i], axis=1))
-            self.gt_radius[i] = max_rad
         # Number of each type of queries answered
         self.total_ML = 0
         self.total_CL = 0
@@ -72,6 +69,9 @@ class WeakQuerier(Querier):
         :return:
             ConstraintType (ML, CL, DK)
         """
+        # if self.__calculated is False:
+        #     self.calculate_radius_centroids()
+
         if self.query_limit_reached():
             raise MaximumQueriesExceeded
         self.queries_asked += 1
@@ -97,8 +97,8 @@ class WeakQuerier(Querier):
             b = 25
             d_xy = np.linalg.norm(self.data[i, :] - self.data[j, :])
             if self.labels[i] == self.labels[j]:
-                prob_dk = (self.max_prob - self.min_prob) / (b**(2*self.gt_radius[self.labels[i]]) - 1)
-                prob_dk *= (b**d_xy - 1)
+                prob_dk = (self.max_prob - self.min_prob) / (b ** (2 * self.gt_radius[self.labels[i]]) - 1)
+                prob_dk *= (b ** d_xy - 1)
                 prob_dk += self.min_prob
                 if np.random.rand() <= prob_dk:
                     constraint_type = 0
@@ -106,8 +106,8 @@ class WeakQuerier(Querier):
                     constraint_type = 1
             else:
                 d_centroids = np.linalg.norm(self.gt_centroids[self.labels[i]] - self.gt_centroids[self.labels[j]])
-                prob_dk = (self.min_prob - self.max_prob) / (b**d_centroids - 1)
-                prob_dk *= (b**d_xy - 1)
+                prob_dk = (self.min_prob - self.max_prob) / (b ** d_centroids - 1)
+                prob_dk *= (b ** d_xy - 1)
                 prob_dk += self.max_prob
                 if d_centroids < d_xy or np.random.rand() <= prob_dk:
                     constraint_type = -1
@@ -130,3 +130,16 @@ class WeakQuerier(Querier):
             self.total_DK += 1
             return ConstraintType.DK
 
+    def set_labels_and_data(self, labels=None, data=None):
+        if labels is not None:
+            self.labels = labels
+        if data is not None:
+            self.data = data
+        self.calculate_radius_centroids()
+
+    def calculate_radius_centroids(self):
+        if self.data is not None and self.labels is not None:
+            for i in np.unique(self.labels):
+                self.gt_centroids[i] = (np.mean(self.data[self.labels == i,], axis=0))
+                max_rad = max(np.linalg.norm(self.data[self.labels == i, :] - self.gt_centroids[i], axis=1))
+                self.gt_radius[i] = max_rad

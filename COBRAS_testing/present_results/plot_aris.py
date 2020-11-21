@@ -70,7 +70,7 @@ def plot_overall_average_ARI(comparison_name, algo_names, line_names, dataset_na
     fig, ax = plt.subplots(figsize = (6,4))
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_ylim(0.2,0.52)
+    ax.set_ylim(0.2, 1.0)
     texts = []
     for idx,(algo_name,line_name) in enumerate(zip(algo_names,line_names)):
         average = None

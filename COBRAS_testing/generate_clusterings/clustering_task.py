@@ -62,7 +62,8 @@ class ClusteringTask:
         self.dataset = dataset
 
     def run(self, dataset):
-        self.querier.labels = dataset.target
+        self.querier.set_labels_and_data(dataset.target, dataset.data)
+
         if hasattr(self.clusterer, "clustering_logger"):
             self.querier.logger = self.clusterer.clustering_logger
         if hasattr(self.clusterer, "raw_run_name"):
