@@ -1,4 +1,5 @@
 datasets/
+datasets/*
 datasets/**
 COBRAS_testing-master.zip
 COBRAS-dont-know.zip
