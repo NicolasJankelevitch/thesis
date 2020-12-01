@@ -17,6 +17,7 @@ notebooks/*/.ipynb_checkpoints/*
 ##COBRAS_dont_know##
 #python
 COBRAS_dont_know/__pycache__/
+COBRAS_dont_know/*/__pycache__/
 COBRAS_dont_know/*.py[cod]
 COBRAS_dont_know/*$py.class
 COBRAS_dont_know/*.so
