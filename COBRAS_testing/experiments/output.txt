@@ -1,0 +1,76 @@
+RANDOM
+                         mean ari  ...  mean false neg
+dataset                            ...                
+breast-cancer-wisconsin  0.530822  ...             0.0
+column_2C                0.029677  ...             0.0
+dermatology              0.549377  ...             0.0
+ecoli                    0.407996  ...             0.0
+glass                    0.187597  ...             0.0
+hepatitis                0.102545  ...             0.0
+ionosphere               0.036104  ...             0.0
+iris                     0.388263  ...             0.0
+optdigits389_full        0.566793  ...             0.0
+parkinsons               0.002603  ...             0.0
+segmentation             0.453859  ...             0.0
+sonar                    0.005203  ...             0.0
+wine                     0.389497  ...             0.0
+yeast                    0.161708  ...             0.0
+
+[14 rows x 5 columns]
+NOISY RANDOM
+                         mean ari  ...  mean false neg
+dataset                            ...                
+breast-cancer-wisconsin  0.495930  ...       12.333333
+column_2C                0.015673  ...       14.666667
+dermatology              0.537562  ...       11.000000
+ecoli                    0.407571  ...       12.666667
+glass                    0.182106  ...        9.000000
+hepatitis                0.021310  ...       15.000000
+ionosphere               0.040832  ...       15.333333
+iris                     0.312789  ...       11.333333
+optdigits389_full        0.534289  ...       12.333333
+parkinsons               0.001477  ...       13.666667
+segmentation             0.507457  ...       10.666667
+sonar                    0.016167  ...       11.333333
+wine                     0.323772  ...       11.000000
+yeast                    0.144541  ...       10.333333
+
+[14 rows x 5 columns]
+ACTIVE
+                         mean ari  ...  mean false neg
+dataset                            ...                
+breast-cancer-wisconsin  0.323777  ...             0.0
+column_2C                0.135559  ...             0.0
+dermatology              0.583166  ...             0.0
+ecoli                    0.463993  ...             0.0
+glass                    0.223159  ...             0.0
+hepatitis                0.278534  ...             0.0
+ionosphere               0.036378  ...             0.0
+iris                     0.269340  ...             0.0
+optdigits389_full        0.568898  ...             0.0
+parkinsons               0.035942  ...             0.0
+segmentation             0.490575  ...             0.0
+sonar                    0.093099  ...             0.0
+wine                     0.270313  ...             0.0
+yeast                    0.183802  ...             0.0
+
+[14 rows x 5 columns]
+ACTIVE NOISY
+                         mean ari  ...  mean false neg
+dataset                            ...                
+breast-cancer-wisconsin  0.286066  ...       17.333333
+column_2C                0.095073  ...       14.666667
+dermatology              0.582566  ...       18.000000
+ecoli                    0.411603  ...       14.666667
+glass                    0.207848  ...       14.000000
+hepatitis                0.216674  ...       16.333333
+ionosphere               0.063577  ...       17.000000
+iris                     0.269887  ...       19.333333
+optdigits389_full        0.542791  ...       18.666667
+parkinsons               0.026698  ...       17.000000
+segmentation             0.493721  ...       12.333333
+sonar                    0.051685  ...       18.333333
+wine                     0.364106  ...       19.000000
+yeast                    0.167853  ...       12.000000
+
+[14 rows x 5 columns]

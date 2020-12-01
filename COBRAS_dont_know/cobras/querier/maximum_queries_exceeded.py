@@ -1,0 +1,2 @@
+class MaximumQueriesExceeded(Exception):
+    pass
