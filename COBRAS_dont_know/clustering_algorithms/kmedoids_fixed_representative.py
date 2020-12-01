@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
 
 
-class KmeansFixedRepresentative(ClusterAlgorithm):
+class KmedoidsFixedRepresentative(ClusterAlgorithm):
     def __init__(self, n_runs=10):
         self.n_runs = n_runs
         self.parent_repr_idx = None
