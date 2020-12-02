@@ -1,5 +1,6 @@
 from enum import Enum
 from clustering_algorithms.clustering_algorithms import KMeansClusterAlgorithm, ClusterAlgorithm
+from clustering_algorithms.kmeans_fixed_representative import KmeansFixedRepresentative
 from clustering_algorithms.kmedoids_fixed_representative import KmedoidsFixedRepresentative
 from cobras.clusters.cluster import Cluster
 from cobras.clusters.clustering import Clustering
@@ -221,7 +222,8 @@ class COBRAS:
 
     def split_superinstance(self, si, k):
         # cluster the instances of the superinstance
-        if isinstance(self.cluster_algo, KmedoidsFixedRepresentative):
+        if isinstance(self.cluster_algo, KmedoidsFixedRepresentative) or \
+                isinstance(self.cluster_algo, KmeansFixedRepresentative):
             self.cluster_algo.parent_repr_idx = si.representative_idx
         clusters = self.cluster_algo.cluster(self.data, si.indices, k, [], [])
 
