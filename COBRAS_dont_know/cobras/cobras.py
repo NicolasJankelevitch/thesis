@@ -220,12 +220,17 @@ class COBRAS:
         self.logger.log_splitlevel(splitlevel)
         return splitlevel
 
-    def split_superinstance(self, si, k):
-        # cluster the instances of the superinstance
-        if isinstance(self.cluster_algo, KmedoidsFixedRepresentative) or \
-                isinstance(self.cluster_algo, KmeansFixedRepresentative):
-            self.cluster_algo.parent_repr_idx = si.representative_idx
-        clusters = self.cluster_algo.cluster(self.data, si.indices, k, [], [])
+    def split_superinstance(self, si, k, use_basic_kmeans=False):
+        clusters = None
+        if use_basic_kmeans:
+            clusterer = KMeansClusterAlgorithm()
+            clusterer.cluster(self.data, si.indices, k, [], [])
+        else:
+            if isinstance(self.cluster_algo, KmedoidsFixedRepresentative) or \
+                    isinstance(self.cluster_algo, KmeansFixedRepresentative):
+                self.cluster_algo.parent_repr_idx = si.representative_idx
+            # cluster the instances of the superinstance
+            clusters = self.cluster_algo.cluster(self.data, si.indices, k, [], [])
 
         # based on the resulting clusters make new superinstances
         # superinstances with no training instances are assigned to the closest superinstance with training instances
