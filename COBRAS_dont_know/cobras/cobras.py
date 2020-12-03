@@ -224,7 +224,7 @@ class COBRAS:
         clusters = None
         if use_basic_kmeans:
             clusterer = KMeansClusterAlgorithm()
-            clusterer.cluster(self.data, si.indices, k, [], [])
+            clusters = clusterer.cluster(self.data, si.indices, k, [], [])
         else:
             if isinstance(self.cluster_algo, KmedoidsFixedRepresentative) or \
                     isinstance(self.cluster_algo, KmeansFixedRepresentative):
