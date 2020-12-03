@@ -31,7 +31,7 @@ class COBRAS:
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
-                 splitlevel_strategy: SplitLevelEstimationStrategy = StandardSplitLevelEstimationStrategy(SelectLeastInstancesHeuristic())):
+                 splitlevel_strategy: SplitLevelEstimationStrategy = StandardSplitLevelEstimationStrategy(SelectMostInstancesHeuristic())):
 
         # Set seed
         # np.random.seed(2020)
