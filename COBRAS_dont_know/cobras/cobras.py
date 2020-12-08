@@ -31,7 +31,8 @@ class COBRAS:
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
-                 splitlevel_strategy: SplitLevelEstimationStrategy = StandardSplitLevelEstimationStrategy(SelectMostInstancesHeuristic())):
+                 splitlevel_strategy: SplitLevelEstimationStrategy = StandardSplitLevelEstimationStrategy(
+                     SelectMostInstancesHeuristic())):
 
         # Set seed
         # np.random.seed(2020)
@@ -133,9 +134,7 @@ class COBRAS:
         ml, cl, dk = self.logger.get_constraint_lists()
         return all_clusters, runtimes, ml, cl, dk
 
-    ###########################
-    #       SPLITTING         #
-    ###########################
+    # region SPLITTING
 
     def split_next_superinstance(self):
         # identify the next super-instance to split
@@ -263,9 +262,9 @@ class COBRAS:
         else:
             return new_clusters
 
-    ###########################
-    #        MERGING          #
-    ###########################
+    # endregion
+
+    # region MERGING
     def merge_containing_clusters(self, clustering_to_merge):
         """
             Merges the given clustering based on user constraints
@@ -293,7 +292,7 @@ class COBRAS:
             merged = False
             for x, y in cluster_pairs:
                 if self.cannot_link_between_clusters(x, y) \
-                 or self.dont_know_between_clusters(x, y):
+                        or self.dont_know_between_clusters(x, y):
                     continue
 
                 must_link_exists = None
@@ -343,9 +342,8 @@ class COBRAS:
         if reused is not None:
             return reused.is_DK()
 
-    ############################################
-    #region Constraint querying and constraint reuse
-    ############################################
+    # endregion
+    # region Constraint querying and constraint reuse
     def get_constraint_between_clusters(self, c1: Cluster, c2: Cluster, purpose, reuse=True):
         if reuse:
             reused_constraint = self.check_constraint_reuse_clusters(c1, c2)
@@ -417,7 +415,7 @@ class COBRAS:
             constraint_type = self.try_similarity_prediction(min_instance, max_instance)
 
         self.constraint_index.add_constraint(
-                Constraint(min_instance, max_instance, constraint_type, purpose=purpose))
+            Constraint(min_instance, max_instance, constraint_type, purpose=purpose))
         self.logger.log_new_user_query(Constraint(min_instance, max_instance, constraint_type),
                                        self.get_constraint_length(), self.clustering_to_store)
 
@@ -425,7 +423,7 @@ class COBRAS:
 
     def try_similarity_prediction(self, A, B):
         cos_threshold = 0.95
-        norm_factor_theshold = 0.95 # Minimun percentage
+        norm_factor_theshold = 0.95  # Minimun percentage
         # Take all existing constraints for both instances
         # AB -> Unknown constraint
         # AC -> Known constraint
@@ -516,16 +514,19 @@ class COBRAS:
             if np.any(y_prob >= conf_threshold):
                 self.logger.predicted_constraints.append(
                     (Constraint(A, B, ConstraintType(y_pred), purpose="RF")))
-                if self.querier.labels[A] == self.querier.labels[B] and ConstraintType(y_pred) == ConstraintType.ML: # HIT
+                if self.querier.labels[A] == self.querier.labels[B] and ConstraintType(
+                        y_pred) == ConstraintType.ML:  # HIT
                     self.logger.n_correct_preds += 1
                     self.logger.accuracy_per_n_constraints.append([self.querier.queries_asked, 1])
-                elif self.querier.labels[A] != self.querier.labels[B] and ConstraintType(y_pred) == ConstraintType.CL: # HIT
+                elif self.querier.labels[A] != self.querier.labels[B] and ConstraintType(
+                        y_pred) == ConstraintType.CL:  # HIT
                     self.logger.n_correct_preds += 1
                     self.logger.accuracy_per_n_constraints.append([self.querier.queries_asked, 1])
-                else: # MISS
+                else:  # MISS
                     self.logger.accuracy_per_n_constraints.append([self.querier.queries_asked, 0])
                 return ConstraintType(y_pred)
             else:
                 return ConstraintType.DK
         else:
             return ConstraintType.DK
+    # endregion
