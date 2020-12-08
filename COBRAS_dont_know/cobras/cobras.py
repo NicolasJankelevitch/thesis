@@ -5,8 +5,8 @@ from clustering_algorithms.kmedoids_fixed_representative import KmedoidsFixedRep
 from cobras.clusters.cluster import Cluster
 from cobras.clusters.clustering import Clustering
 from cobras.cobras_logger import COBRASLogger
-from cobras.constraints.constraint_index import *
 from cobras.constraints.constraint import Constraint
+from cobras.constraints.constraint_index import ConstraintIndex
 from cobras.constraints.constraint_type import ConstraintType
 from cobras.querier.querier import Querier
 from cobras.super_instances.superinstance import SuperInstance, SuperInstanceBuilder
@@ -67,6 +67,8 @@ class COBRAS:
 
         # Logger object
         self.logger = None
+        self.nr_reused = 0
+        self.nr_tried = 0
 
     def get_constraint_length(self):
         return self.constraint_index.get_number_of_constraints()
@@ -343,6 +345,7 @@ class COBRAS:
             return reused.is_DK()
 
     # endregion
+
     # region Constraint querying and constraint reuse
     def get_constraint_between_clusters(self, c1: Cluster, c2: Cluster, purpose, reuse=True):
         if reuse:
@@ -377,7 +380,10 @@ class COBRAS:
 
         for si1, si2 in itertools.product(superinstances1, superinstances2):
             reused_constraint = self.check_constraint_reuse_between_representatives(si1, si2)
+            self.nr_tried = self.nr_tried + 1
             if reused_constraint is not None:
+                self.nr_reused = self.nr_reused + 1
+                self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
                 return reused_constraint
 
         return None

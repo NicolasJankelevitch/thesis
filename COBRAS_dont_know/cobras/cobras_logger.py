@@ -28,6 +28,9 @@ class COBRASLogger:
         # RF: Accuracy per number of constraints
         self.accuracy_per_n_constraints = []
 
+        # amount of reused constraints
+        self.nr_reused_constraints = 0
+
     def log_start(self):
         self.start_time = time.time()
 
