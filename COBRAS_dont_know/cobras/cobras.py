@@ -380,7 +380,7 @@ class COBRAS:
 
         for si1, si2 in itertools.product(superinstances1, superinstances2):
             reused_constraint = self.check_constraint_reuse_between_representatives(si1, si2)
-            self.nr_tried = self.nr_tried + 1
+            self.logger.nr_reuse_tries = self.logger.nr_reuse_tries + 1
             if reused_constraint is not None:
                 self.nr_reused = self.nr_reused + 1
                 self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
