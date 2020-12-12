@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from config import FIGURE_DIR
 
 
-def calculate_and_plot_query_reuse(test_names, comparison_name):
+def calculate_and_plot_query_reuse(comparison_name, test_names):
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
     counter = 0

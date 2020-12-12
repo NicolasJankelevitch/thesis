@@ -3,13 +3,14 @@ import numpy as np
 from copy import deepcopy
 
 
-class KmeansFixedRepresentative(ClusterAlgorithm):
+class KmeansPlusFixedRepresentative(ClusterAlgorithm):
     def __init__(self, n_runs=10):
         self.n_runs = n_runs
         self.parent_repr_idx = None
 
     # This code was adapted from https://www.kaggle.com/andyxie/k-means-clustering-implementation-in-python
     def cluster(self, data, indices, k, ml, cl, seed=None):
+        k = k+1
         if self.parent_repr_idx is None:
             raise Exception("parent_representative_idx is not set (this parameter is required for this clutering technique)")
 
