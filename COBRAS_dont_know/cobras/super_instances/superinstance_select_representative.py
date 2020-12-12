@@ -22,7 +22,9 @@ class SuperInstance_select_representative(SuperInstance):
         if len(set(self.si_train_indices)) < len(self.si_train_indices):
             print("something goes wrong!")
         try:
-            # Representative instance is the training instance that is closest to the clusters centroid
+            # check if representative of parent cluster is in this clusters training_indices
+            # if so, use it as representative
+            # else representative instance is the training instance that is closest to the clusters centroid
             if parent is not None:
                 if parent.representative_idx in indices:
                     self.representative_idx = parent.representative_idx
