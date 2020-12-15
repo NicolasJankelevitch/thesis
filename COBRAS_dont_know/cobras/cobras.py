@@ -68,8 +68,6 @@ class COBRAS:
 
         # Logger object
         self.logger = None
-        self.nr_reused = 0
-        self.nr_tried = 0
 
     def get_constraint_length(self):
         return self.constraint_index.get_number_of_constraints()
@@ -299,9 +297,11 @@ class COBRAS:
                         or self.dont_know_between_clusters(x, y):
                     continue
 
+                self.logger.nr_reuse_tries = self.logger.nr_reuse_tries + 1
                 must_link_exists = None
                 if self.must_link_between_clusters(x, y):
                     must_link_exists = True
+                    self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
 
                 if self.querier.query_limit_reached():
                     query_limit_reached = True
@@ -382,10 +382,7 @@ class COBRAS:
 
         for si1, si2 in itertools.product(superinstances1, superinstances2):
             reused_constraint = self.check_constraint_reuse_between_representatives(si1, si2)
-            self.logger.nr_reuse_tries = self.logger.nr_reuse_tries + 1
             if reused_constraint is not None:
-                self.nr_reused = self.nr_reused + 1
-                self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
                 return reused_constraint
 
         return None
