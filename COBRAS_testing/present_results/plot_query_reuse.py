@@ -22,9 +22,12 @@ def calculate_and_plot_query_reuse(comparison_name, test_names):
                 file = os.path.join(dataset_folder, f)
                 with open(file) as d:
                     data = d.read()
-                    dictionary = ast.literal_eval(data)
-                    reuses = dictionary['nr_reuses']
-                    tries = dictionary['nr_tries']
+                    # dictionary = ast.literal_eval(data)
+                    # reuses = dictionary['nr_reuses']
+                    # tries = dictionary['nr_tries']
+                    reuses = data[data.find("nr_reuses") + 11:]
+                    reuses = reuses[:reuses.find(",")]
+                    tries = data[data.find("nr_tries")+10:-1]
                     total_dataset_reuses = total_dataset_reuses + int(reuses)
                     total_dataset_tries = total_dataset_tries + int(tries)
             total_test_reuses = total_test_reuses + total_dataset_reuses
@@ -51,21 +54,5 @@ def plot_reuse(comparison_name, test_names, query_reuses, tries):
     plt.savefig(output_file_name, dpi=300, bbox_inches='tight')
 
 
-def tryout(comparison_name, test_names):
-    for test_name in test_names:
-        test_path = os.path.join(FOLD_RESULT_DIR, test_name)
-        test_path = os.path.join(test_path, "clusterings")
-        for dataset_name in os.listdir(test_path):
-            dataset_folder = os.path.join(test_path, dataset_name)
-            for f in os.listdir(dataset_folder):
-                file = os.path.join(dataset_folder, f)
-                with open(file) as d:
-                    data = d.read()
-                    dictionary = ast.literal_eval(data)
-                    print(dictionary['nr_tries'], dictionary['nr_reuses'])
-
-
 if __name__ == '__main__':
-    # tryout("", ["standard_COBRAS"])
-    calculate_and_plot_query_reuse("new_bar_graph", ["standard_COBRAS", "5"])
-    # , "9", "10"])
+    calculate_and_plot_query_reuse("new_bar_graph", ["standard_COBRAS", "4", "6", "9", "10"])
