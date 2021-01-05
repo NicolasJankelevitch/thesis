@@ -293,15 +293,15 @@ class COBRAS:
 
             merged = False
             for x, y in cluster_pairs:
+                self.logger.phase_constraints.add((x, y))
+                print(self.logger.phase_constraints)
                 if self.cannot_link_between_clusters(x, y) \
                         or self.dont_know_between_clusters(x, y):
                     continue
 
-                self.logger.nr_reuse_tries = self.logger.nr_reuse_tries + 1
                 must_link_exists = None
                 if self.must_link_between_clusters(x, y):
                     must_link_exists = True
-                    self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
 
                 if self.querier.query_limit_reached():
                     query_limit_reached = True
@@ -317,9 +317,8 @@ class COBRAS:
                     clustering_to_merge.clusters.remove(y)
                     merged = True
                     break
-
         fully_merged = not query_limit_reached and not merged
-
+        self.logger.end_merging_phase()
         return fully_merged
 
     def cannot_link_between_clusters(self, c1, c2):

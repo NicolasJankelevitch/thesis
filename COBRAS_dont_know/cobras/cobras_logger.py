@@ -29,8 +29,9 @@ class COBRASLogger:
         self.accuracy_per_n_constraints = []
 
         # amount of reused constraints
-        self.nr_reused_constraints = 0
-        self.nr_reuse_tries = 0
+        self.reused_constraints = []
+        self.phase_constraints = set(())
+        self.constraints_previously_used = set(())
 
     def log_start(self):
         self.start_time = time.time()
@@ -78,3 +79,10 @@ class COBRASLogger:
         # intermediate clustering results
         self.intermediate_results.append(
             (clustering_to_store, time.time() - self.start_time, con_length))
+
+    def end_merging_phase(self):
+        for x in self.phase_constraints:
+            if x in self.constraints_previously_used:
+                self.reused_constraints.append(x)
+        self.constraints_previously_used.update(self.phase_constraints)
+        self.phase_constraints = set(())
