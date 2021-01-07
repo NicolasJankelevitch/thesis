@@ -293,8 +293,6 @@ class COBRAS:
 
             merged = False
             for x, y in cluster_pairs:
-                self.logger.phase_constraints.add((x, y))
-                print(self.logger.phase_constraints)
                 if self.cannot_link_between_clusters(x, y) \
                         or self.dont_know_between_clusters(x, y):
                     continue
@@ -382,6 +380,7 @@ class COBRAS:
         for si1, si2 in itertools.product(superinstances1, superinstances2):
             reused_constraint = self.check_constraint_reuse_between_representatives(si1, si2)
             if reused_constraint is not None:
+                self.logger.phase_constraints.add((si1.representative_idx, si2.representative_idx))
                 return reused_constraint
 
         return None
@@ -397,12 +396,15 @@ class COBRAS:
         reused_constraint = None
         ml_constraint = Constraint(i1, i2, ConstraintType.ML)
         cl_constraint = Constraint(i1, i2, ConstraintType.CL)
+        dk_constraint = Constraint(i1, i2, ConstraintType.DK)
         constraint_index = self.constraint_index
 
         if ml_constraint in constraint_index:
             reused_constraint = ml_constraint
         elif cl_constraint in constraint_index:
             reused_constraint = cl_constraint
+        elif dk_constraint in constraint_index:
+            reused_constraint = dk_constraint
         return reused_constraint
 
     def query_querier(self, instance1, instance2, purpose):

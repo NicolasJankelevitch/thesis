@@ -81,8 +81,9 @@ class COBRASLogger:
             (clustering_to_store, time.time() - self.start_time, con_length))
 
     def end_merging_phase(self):
-        for x in self.phase_constraints:
-            if x in self.constraints_previously_used:
-                self.reused_constraints.append(x)
+        self.reused_constraints.extend(self.phase_constraints.intersection(self.constraints_previously_used))
+        # for x in self.phase_constraints:
+        #    if x in self.constraints_previously_used:
+        #        self.reused_constraints.append(x)
         self.constraints_previously_used.update(self.phase_constraints)
         self.phase_constraints = set(())

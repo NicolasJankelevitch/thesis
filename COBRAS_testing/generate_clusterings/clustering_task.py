@@ -78,7 +78,7 @@ class ClusteringTask:
         result_dict["dks"] = dks
         result_dict["train_indices"] = self.training_indices
         result_dict["reused_constraints"] = self.clusterer.logger.reused_constraints
-        result_dict["phase_constraints"] = self.clusterer.logger.phase_constraints
+        # result_dict["phase_constraints"] = self.clusterer.logger.phase_constraints
         if self.result_extractor is not None:
             extra_result_dict = self.result_extractor(self.clusterer)
             result_dict.update(extra_result_dict)
