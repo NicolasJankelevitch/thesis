@@ -6,7 +6,7 @@ import numpy as np
 import ast
 
 
-def calculate_and_plot_query_reuse(comparison_name, test_names):
+def calculate_and_plot_query_reuse_per_algorithm(comparison_name, test_names):
     reuse_list = []
     unique_reused_list = []
     unique_list = []
@@ -68,4 +68,4 @@ def get_unique_set(constraints):
     return return_set
 
 if __name__ == '__main__':
-    calculate_and_plot_query_reuse("new_bar_graph", ["standard_COBRAS", "6", "9", "10"])
+    calculate_and_plot_query_reuse_per_algorithm("new_bar_graph", ["standard_COBRAS", "6", "9", "10"])
