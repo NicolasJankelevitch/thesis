@@ -380,7 +380,6 @@ class COBRAS:
         for si1, si2 in itertools.product(superinstances1, superinstances2):
             reused_constraint = self.check_constraint_reuse_between_representatives(si1, si2)
             if reused_constraint is not None:
-                self.logger.phase_constraints.add((si1.representative_idx, si2.representative_idx))
                 return reused_constraint
 
         return None
@@ -390,6 +389,7 @@ class COBRAS:
         return reused_constraint
 
     def check_constraint_reuse_between_representatives(self, si1, si2):
+        self.logger.phase_constraints.add((si1.representative_idx, si2.representative_idx))
         return self.check_constraint_reuse_between_instances(si1.representative_idx, si2.representative_idx)
 
     def check_constraint_reuse_between_instances(self, i1, i2):

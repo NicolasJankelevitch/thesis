@@ -6,7 +6,7 @@ import numpy as np
 import ast
 
 
-def calculate_and_plot_query_reuse(comparison_name, test_names):
+def calculate_and_plot_query_reuse_per_algorithm(comparison_name, test_names):
     for test_name in test_names:
         test_path = os.path.join(os.path.join(FOLD_RESULT_DIR, test_name), "clusterings")
         dataset_names = os.listdir(test_path)
@@ -62,4 +62,4 @@ def get_unique_set(constraints):
 
 
 if __name__ == '__main__':
-    calculate_and_plot_query_reuse("bar_graph_per_dataset", ["standard_COBRAS", "6", "9", "10"])
+    calculate_and_plot_query_reuse_per_algorithm("bar_graph_per_dataset", ["standard_COBRAS", "6", "9", "10"])
