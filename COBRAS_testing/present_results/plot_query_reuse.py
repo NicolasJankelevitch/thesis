@@ -6,7 +6,7 @@ import numpy as np
 import ast
 
 
-def calculate_and_plot_query_reuse_per_algorithm(comparison_name, test_names):
+def calculate_and_plot_query_reuse(comparison_name, test_names):
     reuse_list = []
     unique_reused_list = []
     unique_list = []

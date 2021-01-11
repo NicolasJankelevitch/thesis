@@ -35,6 +35,7 @@ def calculate_and_plot_query_reuse_per_dataset(comparison_name, test_names):
         image_loc = os.path.join(os.path.join(FIGURE_DIR, "reuse_per_dataset"), dataset_name+".png")
         plot(dataset_name, image_loc, test_names, reuse_list, unique_reuse_list, unique_list)
 
+
 def plot(comparison_name, image_loc, test_names, reuse_list, unique_reused_list, unique_list):
     x = np.arange(len(test_names))
     fig = plt.figure()
