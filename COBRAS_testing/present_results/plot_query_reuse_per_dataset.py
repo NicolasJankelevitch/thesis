@@ -32,17 +32,27 @@ def calculate_and_plot_query_reuse_per_dataset(comparison_name, test_names):
             reuse_list.append(reused_test)
             unique_reuse_list.append(unique_reuse_test)
             unique_list.append(unique_test)
-        image_loc = os.path.join(os.path.join(FIGURE_DIR, "reuse_per_dataset"), dataset_name+".png")
+        image_loc = os.path.join(os.path.join(FIGURE_DIR, comparison_name), dataset_name+".png")
         plot(dataset_name, image_loc, test_names, reuse_list, unique_reuse_list, unique_list)
 
 
 def plot(comparison_name, image_loc, test_names, reuse_list, unique_reused_list, unique_list):
+    print(image_loc)
+    print(reuse_list)
+    print(unique_reused_list)
+    print(unique_list)
     x = np.arange(len(test_names))
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
+    ax.bar(x - 0.25, unique_list, label="#unique constraints", width=0.25)
     ax.bar(x + 0.00, reuse_list, label="#constraints reused", width=0.25)
     ax.bar(x + 0.25, unique_reused_list, label="#unique reused constraints", width=0.25)
-    ax.bar(x - 0.25, unique_list, label="#unique constraints", width=0.25)
+    for i, v in enumerate(unique_list):
+        plt.text(i-.375, v, str(v))
+    for i, v in enumerate(reuse_list):
+        plt.text(i-0.125, v, str(v))
+    for i, v in enumerate(unique_reused_list):
+        plt.text(i+.125, v, str(v))
     ax.set_xticks(x)
     ax.set_xticklabels(test_names)
     plt.xticks(rotation=90)
@@ -62,4 +72,4 @@ def get_unique_set(constraints):
 
 
 if __name__ == '__main__':
-    calculate_and_plot_query_reuse_per_dataset("bar_graph_per_dataset", ["standard_COBRAS", "6", "9", "10"])
+    calculate_and_plot_query_reuse_per_dataset("bar_graph_per_dataset_with_numbers", ["standard_COBRAS", "6", "9", "10"])

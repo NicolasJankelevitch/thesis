@@ -33,6 +33,9 @@ class COBRASLogger:
         self.phase_constraints = set(())
         self.constraints_previously_used = set(())
 
+        # check max split reached
+        self.max_split_reached = 0
+
     def log_start(self):
         self.start_time = time.time()
 
@@ -82,8 +85,5 @@ class COBRASLogger:
 
     def end_merging_phase(self):
         self.reused_constraints.extend(self.phase_constraints.intersection(self.constraints_previously_used))
-        # for x in self.phase_constraints:
-        #    if x in self.constraints_previously_used:
-        #        self.reused_constraints.append(x)
         self.constraints_previously_used.update(self.phase_constraints)
         self.phase_constraints = set(())

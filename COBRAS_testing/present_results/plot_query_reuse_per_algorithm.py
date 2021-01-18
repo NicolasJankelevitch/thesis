@@ -40,9 +40,15 @@ def plot(comparison_name, image_name, test_names, reuse_list, unique_reused_list
     x = np.arange(len(test_names))
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
+    ax.bar(x - 0.25, unique_list, label="#unique constraints", width=0.25)
     ax.bar(x + 0.00, reuse_list, label="#constraints reused", width=0.25)
     ax.bar(x + 0.25, unique_reused_list, label="#unique reused constraints", width=0.25)
-    ax.bar(x - 0.25, unique_list, label="#unique constraints", width=0.25)
+    for i, v in enumerate(unique_list):
+        plt.text(i-.375, v, str(v))
+    for i, v in enumerate(reuse_list):
+        plt.text(i-0.125, v, str(v))
+    for i, v in enumerate(unique_reused_list):
+        plt.text(i+.125, v, str(v))
     ax.set_xticks(x)
     ax.set_xticklabels(test_names)
     plt.xticks(rotation=90)

@@ -141,6 +141,7 @@ class COBRAS:
         # identify the next super-instance to split
         to_split, originating_cluster = self.identify_superinstance_to_split()
         if to_split is None:
+            self.logger.max_split_reached = self.logger.max_split_reached + 1
             return SplitResult.NO_SPLIT_POSSIBLE
 
         # remove to_split from the clustering

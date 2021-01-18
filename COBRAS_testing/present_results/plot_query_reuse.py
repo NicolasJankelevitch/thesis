@@ -1,7 +1,6 @@
-from config import FOLD_RESULT_DIR
+from config import FOLD_RESULT_DIR, FIGURE_DIR
 import os
 import matplotlib.pyplot as plt
-from config import FIGURE_DIR
 import numpy as np
 import ast
 
@@ -49,9 +48,15 @@ def plot_reuse(comparison_name, test_names, reuse_list, unique_reused_list, uniq
     x = np.arange(len(test_names))
     fig = plt.figure()
     ax = fig.add_axes([0, 0, 1, 1])
+    ax.bar(x - 0.25, unique_list, label="#unique constraints", width=0.25)
     ax.bar(x + 0.00, reuse_list, label="#constraints reused", width=0.25)
     ax.bar(x + 0.25, unique_reused_list, label="#unique reused constraints", width=0.25)
-    ax.bar(x + 0.5, unique_list, label="#unique constraints", width=0.25)
+    for i, v in enumerate(unique_list):
+        plt.text(i-.375, v, str(v))
+    for i, v in enumerate(reuse_list):
+        plt.text(i-0.125, v, str(v))
+    for i, v in enumerate(unique_reused_list):
+        plt.text(i+.125, v, str(v))
     ax.set_xticks(x)
     ax.set_xticklabels(test_names)
     plt.xticks(rotation=45)
@@ -68,4 +73,4 @@ def get_unique_set(constraints):
     return return_set
 
 if __name__ == '__main__':
-    calculate_and_plot_query_reuse_per_algorithm("new_bar_graph", ["standard_COBRAS", "6", "9", "10"])
+    calculate_and_plot_query_reuse("new_counting", ["standard_COBRAS", "6", "9", "10"])
