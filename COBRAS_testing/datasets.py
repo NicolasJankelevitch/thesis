@@ -161,7 +161,7 @@ def show_simple_datasets():
         dataset = Dataset(dataset_name)
         dataset.plot_dataset(save=True)
 
-
 if __name__ == '__main__':
-    show_simple_datasets()
+    # show_simple_datasets()
+    print_all_dataset_info()
     # convert_data_set("ionosphere")

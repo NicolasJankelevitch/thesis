@@ -107,6 +107,8 @@ class COBRAS:
             self.logger.log_entering_phase("splitting")
             statuscode = self.split_next_superinstance()
             if statuscode == SplitResult.NO_SPLIT_POSSIBLE:
+                print("NO SPLIT POSSIBLE")
+                print('-' * 10)
                 # there is no split left to be done
                 # we have produced the best clustering
                 break
@@ -128,6 +130,8 @@ class COBRAS:
             if fully_merged or last_valid_clustering is None:
                 last_valid_clustering = copy.deepcopy(self.clustering)
 
+            print('-' * 10)
+
         self.clustering = last_valid_clustering
         self.logger.log_end()
         all_clusters = self.logger.get_all_clusterings()
@@ -141,15 +145,18 @@ class COBRAS:
         # identify the next super-instance to split
         to_split, originating_cluster = self.identify_superinstance_to_split()
         if to_split is None:
+            self.logger.max_split_reached = self.logger.max_split_reached + 1
             return SplitResult.NO_SPLIT_POSSIBLE
 
         # remove to_split from the clustering
         originating_cluster.super_instances.remove(to_split)
         if len(originating_cluster.super_instances) == 0:
+            print("originating cluster removed")
             self.clustering.clusters.remove(originating_cluster)
 
         # split to_split into new clusters
         split_level = self.determine_split_level(to_split)
+        print("splitlevel: ", split_level)
         new_super_instances = self.split_superinstance(to_split, split_level)
 
         new_clusters = self.add_new_clusters_from_split(new_super_instances)
@@ -169,7 +176,7 @@ class COBRAS:
 
             if originating_cluster not in self.clustering.clusters:
                 self.clustering.clusters.append(originating_cluster)
-
+                print("SPLIT FAILED")
             return SplitResult.SPLIT_FAILED
         else:
             self.clustering.clusters.extend(new_clusters)
@@ -182,28 +189,35 @@ class COBRAS:
         '''
         # if there is only one superinstance return that superinstance as superinstance to split
         if len(self.clustering.clusters) == 1 and len(self.clustering.clusters[0].super_instances) == 1:
+            print("#clusters: 1")
             return self.clustering.clusters[0].super_instances[0], self.clustering.clusters[0]
 
         options = []
+        print("#clusters: {}".format(len(self.clustering.clusters)))
         for cluster in self.clustering.clusters:
             if cluster.is_pure:
+                print("cluster skipped: is pure")
                 continue
             if cluster.is_finished:
+                print("cluster skipped: is finished")
                 continue
-
+            print("#super instances", len(cluster.super_instances))
             for superinstance in cluster.super_instances:
                 if superinstance.tried_splitting:
+                    print("super instance skipped: already tried")
                     continue
                 if len(superinstance.indices) == 1:
+                    print("super instance skipped: only 1 indice")
                     continue
                 if len(superinstance.train_indices) < 2:
+                    print("super instance skipped: not enough train indices")
                     continue
                 else:
                     options.append(superinstance)
-
+        print("#options: ", len(options))
         if len(options) == 0:
+            print("situation 2")
             return None, None
-
         superinstance_to_split = self.split_superinstance_selection_heur.choose_superinstance(options)
         originating_cluster = \
             [cluster for cluster in self.clustering.clusters if superinstance_to_split in cluster.super_instances][0]
@@ -297,11 +311,9 @@ class COBRAS:
                         or self.dont_know_between_clusters(x, y):
                     continue
 
-                self.logger.nr_reuse_tries = self.logger.nr_reuse_tries + 1
                 must_link_exists = None
                 if self.must_link_between_clusters(x, y):
                     must_link_exists = True
-                    self.logger.nr_reused_constraints = self.logger.nr_reused_constraints + 1
 
                 if self.querier.query_limit_reached():
                     query_limit_reached = True
@@ -317,9 +329,8 @@ class COBRAS:
                     clustering_to_merge.clusters.remove(y)
                     merged = True
                     break
-
         fully_merged = not query_limit_reached and not merged
-
+        self.logger.end_merging_phase()
         return fully_merged
 
     def cannot_link_between_clusters(self, c1, c2):
@@ -392,18 +403,22 @@ class COBRAS:
         return reused_constraint
 
     def check_constraint_reuse_between_representatives(self, si1, si2):
+        self.logger.phase_constraints.add((si1.representative_idx, si2.representative_idx))
         return self.check_constraint_reuse_between_instances(si1.representative_idx, si2.representative_idx)
 
     def check_constraint_reuse_between_instances(self, i1, i2):
         reused_constraint = None
         ml_constraint = Constraint(i1, i2, ConstraintType.ML)
         cl_constraint = Constraint(i1, i2, ConstraintType.CL)
+        dk_constraint = Constraint(i1, i2, ConstraintType.DK)
         constraint_index = self.constraint_index
 
         if ml_constraint in constraint_index:
             reused_constraint = ml_constraint
         elif cl_constraint in constraint_index:
             reused_constraint = cl_constraint
+        elif dk_constraint in constraint_index:
+            reused_constraint = dk_constraint
         return reused_constraint
 
     def query_querier(self, instance1, instance2, purpose):

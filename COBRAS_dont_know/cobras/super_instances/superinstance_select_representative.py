@@ -43,3 +43,6 @@ class SuperInstance_select_representative(SuperInstance):
 
     def copy(self):
         return SuperInstance_select_representative(self.data, self.indices, self.train_indices)
+
+    def __str__(self):
+        return str(self.centroid)
