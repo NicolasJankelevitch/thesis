@@ -107,6 +107,8 @@ class COBRAS:
             self.logger.log_entering_phase("splitting")
             statuscode = self.split_next_superinstance()
             if statuscode == SplitResult.NO_SPLIT_POSSIBLE:
+                print("NO SPLIT POSSIBLE")
+                print('-' * 10)
                 # there is no split left to be done
                 # we have produced the best clustering
                 break
@@ -128,6 +130,8 @@ class COBRAS:
             if fully_merged or last_valid_clustering is None:
                 last_valid_clustering = copy.deepcopy(self.clustering)
 
+            print('-' * 10)
+
         self.clustering = last_valid_clustering
         self.logger.log_end()
         all_clusters = self.logger.get_all_clusterings()
@@ -147,10 +151,12 @@ class COBRAS:
         # remove to_split from the clustering
         originating_cluster.super_instances.remove(to_split)
         if len(originating_cluster.super_instances) == 0:
+            print("originating cluster removed")
             self.clustering.clusters.remove(originating_cluster)
 
         # split to_split into new clusters
         split_level = self.determine_split_level(to_split)
+        print("splitlevel: ", split_level)
         new_super_instances = self.split_superinstance(to_split, split_level)
 
         new_clusters = self.add_new_clusters_from_split(new_super_instances)
@@ -170,7 +176,7 @@ class COBRAS:
 
             if originating_cluster not in self.clustering.clusters:
                 self.clustering.clusters.append(originating_cluster)
-
+                print("SPLIT FAILED")
             return SplitResult.SPLIT_FAILED
         else:
             self.clustering.clusters.extend(new_clusters)
@@ -183,28 +189,35 @@ class COBRAS:
         '''
         # if there is only one superinstance return that superinstance as superinstance to split
         if len(self.clustering.clusters) == 1 and len(self.clustering.clusters[0].super_instances) == 1:
+            print("#clusters: 1")
             return self.clustering.clusters[0].super_instances[0], self.clustering.clusters[0]
 
         options = []
+        print("#clusters: {}".format(len(self.clustering.clusters)))
         for cluster in self.clustering.clusters:
             if cluster.is_pure:
+                print("cluster skipped: is pure")
                 continue
             if cluster.is_finished:
+                print("cluster skipped: is finished")
                 continue
-
+            print("#super instances", len(cluster.super_instances))
             for superinstance in cluster.super_instances:
                 if superinstance.tried_splitting:
+                    print("super instance skipped: already tried")
                     continue
                 if len(superinstance.indices) == 1:
+                    print("super instance skipped: only 1 indice")
                     continue
                 if len(superinstance.train_indices) < 2:
+                    print("super instance skipped: not enough train indices")
                     continue
                 else:
                     options.append(superinstance)
-
+        print("#options: ", len(options))
         if len(options) == 0:
+            print("situation 2")
             return None, None
-
         superinstance_to_split = self.split_superinstance_selection_heur.choose_superinstance(options)
         originating_cluster = \
             [cluster for cluster in self.clustering.clusters if superinstance_to_split in cluster.super_instances][0]
