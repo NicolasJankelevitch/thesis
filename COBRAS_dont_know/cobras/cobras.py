@@ -13,6 +13,7 @@ from cobras.querier.querier import Querier
 from cobras.super_instances.superinstance import SuperInstance, SuperInstanceBuilder
 from cobras.super_instances.superinstance_kmeans import KMeans_SuperinstanceBuilder
 from heuristics.select_super_instance_heuristics import *
+from heuristics.constraint_similarity_euclidean import get_dissimilarity
 from heuristics.splitlevel_estimation_strategy import *
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.ensemble import RandomForestClassifier
@@ -29,6 +30,7 @@ class COBRAS:
     def __init__(self,
                  similarity_pred: bool = False,
                  randomforest_pred: bool = False,
+                 cobras_plus: bool = False,
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
@@ -48,6 +50,8 @@ class COBRAS:
         self.similarity_pred = similarity_pred
         # Random Forest prediction
         self.randomforest_pred = randomforest_pred
+        # COBRAS+
+        self.cobras_plus = cobras_plus
 
         # init cobras_cluster_algo
         self.cluster_algo = cluster_algo
@@ -107,8 +111,6 @@ class COBRAS:
             self.logger.log_entering_phase("splitting")
             statuscode = self.split_next_superinstance()
             if statuscode == SplitResult.NO_SPLIT_POSSIBLE:
-                print("NO SPLIT POSSIBLE")
-                print('-' * 10)
                 # there is no split left to be done
                 # we have produced the best clustering
                 break
@@ -130,7 +132,6 @@ class COBRAS:
             if fully_merged or last_valid_clustering is None:
                 last_valid_clustering = copy.deepcopy(self.clustering)
 
-            print('-' * 10)
 
         self.clustering = last_valid_clustering
         self.logger.log_end()
@@ -151,12 +152,10 @@ class COBRAS:
         # remove to_split from the clustering
         originating_cluster.super_instances.remove(to_split)
         if len(originating_cluster.super_instances) == 0:
-            print("originating cluster removed")
             self.clustering.clusters.remove(originating_cluster)
 
         # split to_split into new clusters
         split_level = self.determine_split_level(to_split)
-        print("splitlevel: ", split_level)
         new_super_instances = self.split_superinstance(to_split, split_level)
 
         new_clusters = self.add_new_clusters_from_split(new_super_instances)
@@ -176,7 +175,6 @@ class COBRAS:
 
             if originating_cluster not in self.clustering.clusters:
                 self.clustering.clusters.append(originating_cluster)
-                print("SPLIT FAILED")
             return SplitResult.SPLIT_FAILED
         else:
             self.clustering.clusters.extend(new_clusters)
@@ -189,34 +187,24 @@ class COBRAS:
         '''
         # if there is only one superinstance return that superinstance as superinstance to split
         if len(self.clustering.clusters) == 1 and len(self.clustering.clusters[0].super_instances) == 1:
-            print("#clusters: 1")
             return self.clustering.clusters[0].super_instances[0], self.clustering.clusters[0]
 
         options = []
-        print("#clusters: {}".format(len(self.clustering.clusters)))
         for cluster in self.clustering.clusters:
             if cluster.is_pure:
-                print("cluster skipped: is pure")
                 continue
             if cluster.is_finished:
-                print("cluster skipped: is finished")
                 continue
-            print("#super instances", len(cluster.super_instances))
             for superinstance in cluster.super_instances:
                 if superinstance.tried_splitting:
-                    print("super instance skipped: already tried")
                     continue
                 if len(superinstance.indices) == 1:
-                    print("super instance skipped: only 1 indice")
                     continue
                 if len(superinstance.train_indices) < 2:
-                    print("super instance skipped: not enough train indices")
                     continue
                 else:
                     options.append(superinstance)
-        print("#options: ", len(options))
         if len(options) == 0:
-            print("situation 2")
             return None, None
         superinstance_to_split = self.split_superinstance_selection_heur.choose_superinstance(options)
         originating_cluster = \
@@ -422,6 +410,10 @@ class COBRAS:
         return reused_constraint
 
     def query_querier(self, instance1, instance2, purpose):
+        if self.cobras_plus:
+            similar_query = self.try_similar_query(instance1, instance2)
+            if similar_query is not None:
+                return similar_query
         if self.querier.query_limit_reached():
             print("going over query limit! ", self.get_constraint_length())
         min_instance = min(instance1, instance2)
@@ -429,10 +421,10 @@ class COBRAS:
         constraint_type = self.querier.query(min_instance, max_instance)
 
         if self.randomforest_pred and constraint_type == ConstraintType.DK:
-            constraint_type = self.try_randomforest_prediction(min_instance, max_instance)
+            constraint_type = self.try_randomforest_prediction_DK(min_instance, max_instance)
 
         if self.similarity_pred and constraint_type == ConstraintType.DK:
-            constraint_type = self.try_similarity_prediction(min_instance, max_instance)
+            constraint_type = self.try_similarity_prediction_DK(min_instance, max_instance)
 
         self.constraint_index.add_constraint(
             Constraint(min_instance, max_instance, constraint_type, purpose=purpose))
@@ -441,7 +433,20 @@ class COBRAS:
 
         return Constraint(min_instance, max_instance, constraint_type, purpose=purpose)
 
-    def try_similarity_prediction(self, A, B):
+    def try_similar_query(self, i1, i2):
+        constraint_1 = Constraint(i1, i2, ConstraintType.DK)
+        treshold = 0.75
+        most_similar_constraint = None
+        lowest_dissimilarity = treshold
+        for constraint_2 in self.constraint_index:
+            dissimilarity = get_dissimilarity(constraint_1, constraint_2)
+            if dissimilarity < treshold and dissimilarity < lowest_dissimilarity:
+                most_similar_constraint = constraint_2
+                lowest_dissimilarity = dissimilarity
+        return most_similar_constraint
+
+
+    def try_similarity_prediction_DK(self, A, B):
         cos_threshold = 0.95
         norm_factor_theshold = 0.95  # Minimun percentage
         # Take all existing constraints for both instances
@@ -502,7 +507,7 @@ class COBRAS:
                         return ConstraintType.CL
         return ConstraintType.DK
 
-    def try_randomforest_prediction(self, A, B):
+    def try_randomforest_prediction_DK(self, A, B):
         conf_threshold = 0.9
         n_train_cons_threshold = 60
 

@@ -12,3 +12,4 @@ def get_dissimilarity(c1: Constraint, c2: Constraint):
     distance4 = distance.euclidean(c1.i2, c2.i1)
     numerator = min(max(distance1, distance2), max(distance3, distance4))
     return numerator / denominator
+

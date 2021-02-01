@@ -9,23 +9,20 @@ from clustering_algorithms.kmeans_fixed_representative import KmeansFixedReprese
 from cobras.super_instances.superinstance_select_representative import SuperInstance_select_representative_Builder
 
 
-def test_1():
-    dataset_names = ['faces_eyes_imagenet'] # Dataset.get_standard_dataset_names()
+def test_1(dataset_names):
+    # dataset_names = ['faces_eyes_imagenet'] # Dataset.get_standard_dataset_names()
     for dataset_name in dataset_names:
         data = Dataset(dataset_name)
         querier = LabelQuerier(data.target, 100)
-        splitstrat = StandardSplitLevelEstimationStrategyAlwayskmeans(SelectMostInstancesHeuristic())
+        # splitstrat = StandardSplitLevelEstimationStrategyAlwayskmeans(SelectMostInstancesHeuristic())
         # splitstrat = StandardSplitLevelEstimationStrategy(SelectMostInstancesHeuristic())
-        clusterer = COBRAS(cluster_algo=KmeansFixedRepresentative(),
-                           superinstance_builder=SuperInstance_select_representative_Builder(),
-                           splitlevel_strategy=splitstrat)
+        clusterer = COBRAS(cobras_plus=True)
         logger = COBRASLogger()
 
         clusterings, runtimes, ml, cl, dk = clusterer.fit(data.data, None, None, querier, logger)
 
-        val = len(ml) + len(cl) + len(dk)
-        print("{}:\t{}".format(dataset_name, val))
+        print(clusterings[-1])
 
 
 if __name__ == '__main__':
-    test_1()
+    test_1(["iris"])
