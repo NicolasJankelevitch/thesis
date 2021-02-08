@@ -14,14 +14,10 @@ def test_1(dataset_names):
     for dataset_name in dataset_names:
         data = Dataset(dataset_name)
         querier = LabelQuerier(data.target, 100)
-        # splitstrat = StandardSplitLevelEstimationStrategyAlwayskmeans(SelectMostInstancesHeuristic())
-        # splitstrat = StandardSplitLevelEstimationStrategy(SelectMostInstancesHeuristic())
         clusterer = COBRAS(cobras_plus=True)
         logger = COBRASLogger()
 
         clusterings, runtimes, ml, cl, dk = clusterer.fit(data.data, None, None, querier, logger)
-
-        print(clusterings[-1])
 
 
 if __name__ == '__main__':

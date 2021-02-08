@@ -410,15 +410,19 @@ class COBRAS:
         return reused_constraint
 
     def query_querier(self, instance1, instance2, purpose):
-        if self.cobras_plus:
-            similar_query = self.try_similar_query(instance1, instance2)
-            if similar_query is not None:
-                return similar_query
-        if self.querier.query_limit_reached():
-            print("going over query limit! ", self.get_constraint_length())
         min_instance = min(instance1, instance2)
         max_instance = max(instance1, instance2)
-        constraint_type = self.querier.query(min_instance, max_instance)
+
+        # Check if a similar constraint was already answered (if COBRAS+)
+        constraint_type = None
+        if self.cobras_plus:
+            constraint_type = self.find_similar_constraint(instance1, instance2)
+
+        # Do a new Query
+        if constraint_type is None:
+            if self.querier.query_limit_reached():
+                print("going over query limit! ", self.get_constraint_length())
+            constraint_type = self.querier.query(min_instance, max_instance)
 
         if self.randomforest_pred and constraint_type == ConstraintType.DK:
             constraint_type = self.try_randomforest_prediction_DK(min_instance, max_instance)
@@ -426,25 +430,29 @@ class COBRAS:
         if self.similarity_pred and constraint_type == ConstraintType.DK:
             constraint_type = self.try_similarity_prediction_DK(min_instance, max_instance)
 
-        self.constraint_index.add_constraint(
-            Constraint(min_instance, max_instance, constraint_type, purpose=purpose))
-        self.logger.log_new_user_query(Constraint(min_instance, max_instance, constraint_type),
-                                       self.get_constraint_length(), self.clustering_to_store)
+        if constraint_type is None:
+            raise Exception("constraint type None after query")
 
-        return Constraint(min_instance, max_instance, constraint_type, purpose=purpose)
+        new_constraint = Constraint(min_instance, max_instance, constraint_type, purpose=purpose)
 
-    def try_similar_query(self, i1, i2):
+        self.constraint_index.add_constraint(new_constraint)
+        self.logger.log_new_user_query(new_constraint, self.get_constraint_length(), self.clustering_to_store)
+
+        return new_constraint
+
+    def find_similar_constraint(self, i1, i2):
         constraint_1 = Constraint(i1, i2, ConstraintType.DK)
         treshold = 0.75
         most_similar_constraint = None
         lowest_dissimilarity = treshold
         for constraint_2 in self.constraint_index:
-            dissimilarity = get_dissimilarity(constraint_1, constraint_2)
+            dissimilarity = get_dissimilarity(constraint_1, constraint_2, self.data)
             if dissimilarity < treshold and dissimilarity < lowest_dissimilarity:
                 most_similar_constraint = constraint_2
                 lowest_dissimilarity = dissimilarity
-        return most_similar_constraint
-
+        if most_similar_constraint is not None:
+            return most_similar_constraint.type
+        return None
 
     def try_similarity_prediction_DK(self, A, B):
         cos_threshold = 0.95
