@@ -35,7 +35,8 @@ class COBRAS:
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
                  splitlevel_strategy: SplitLevelEstimationStrategy = StandardSplitLevelEstimationStrategy(
-                     SelectMostInstancesHeuristic())):
+                     SelectMostInstancesHeuristic()),
+                 similarity_treshold: int = 0.75):
 
         # Set seed
         # np.random.seed(2020)
@@ -72,6 +73,8 @@ class COBRAS:
 
         # Logger object
         self.logger = None
+
+        self.similarity_treshold = similarity_treshold
 
     def get_constraint_length(self):
         return self.constraint_index.get_number_of_constraints()
@@ -131,7 +134,6 @@ class COBRAS:
             # fill in the last_valid_clustering whenever appropriate
             if fully_merged or last_valid_clustering is None:
                 last_valid_clustering = copy.deepcopy(self.clustering)
-
 
         self.clustering = last_valid_clustering
         self.logger.log_end()
@@ -354,14 +356,14 @@ class COBRAS:
             if reused_constraint is not None:
                 return reused_constraint
         si1, si2 = c1.get_comparison_points(c2)
-        return self.query_querier(si1.representative_idx, si2.representative_idx, purpose)
+        return self.get_new_constraint(si1.representative_idx, si2.representative_idx, purpose)
 
     def get_constraint_between_superinstances(self, s1: SuperInstance, s2: SuperInstance, purpose, reuse=True):
         if reuse:
             reused_constraint = self.check_constraint_reuse_between_representatives(s1, s2)
             if reused_constraint is not None:
                 return reused_constraint
-        return self.query_querier(s1.representative_idx, s2.representative_idx, purpose)
+        return self.get_new_constraint(s1.representative_idx, s2.representative_idx, purpose)
 
     def get_constraint_between_instances(self, instance1, instance2, purpose, reuse=True):
         reused_constraint = None
@@ -373,7 +375,7 @@ class COBRAS:
 
         min_instance = min(instance1, instance2)
         max_instance = max(instance1, instance2)
-        return self.query_querier(min_instance, max_instance, purpose)
+        return self.get_new_constraint(min_instance, max_instance, purpose)
 
     def check_constraint_reuse_clusters(self, c1: Cluster, c2: Cluster):
         superinstances1 = c1.super_instances
@@ -409,21 +411,20 @@ class COBRAS:
             reused_constraint = dk_constraint
         return reused_constraint
 
-    def query_querier(self, instance1, instance2, purpose):
+    def get_new_constraint(self, instance1, instance2, purpose):
         min_instance = min(instance1, instance2)
         max_instance = max(instance1, instance2)
+        constraint_type = None
 
         # Check if a similar constraint was already answered (if COBRAS+)
-        constraint_type = None
         if self.cobras_plus:
-            constraint_type = self.find_similar_constraint(instance1, instance2)
+            constraint_type = self.find_similar_constraint(min_instance, max_instance)
 
         # Do a new Query
         if constraint_type is None:
-            if self.querier.query_limit_reached():
-                print("going over query limit! ", self.get_constraint_length())
-            constraint_type = self.querier.query(min_instance, max_instance)
+            constraint_type = self.query_querier(min_instance, max_instance, purpose)
 
+        # posterior prediction
         if self.randomforest_pred and constraint_type == ConstraintType.DK:
             constraint_type = self.try_randomforest_prediction_DK(min_instance, max_instance)
 
@@ -436,24 +437,36 @@ class COBRAS:
         new_constraint = Constraint(min_instance, max_instance, constraint_type, purpose=purpose)
 
         self.constraint_index.add_constraint(new_constraint)
-        self.logger.log_new_user_query(new_constraint, self.get_constraint_length(), self.clustering_to_store)
-
         return new_constraint
+
+    def query_querier(self, instance1, instance2, purpose):
+        if self.querier.query_limit_reached():
+            print("going over query limit! ", self.get_constraint_length())
+        constraint_type = self.querier.query(instance1, instance2)
+
+        self.logger.log_new_user_query(Constraint(instance1, instance2, constraint_type, purpose=purpose),
+                                        self.get_constraint_length(), self.clustering_to_store)
+        return constraint_type
 
     def find_similar_constraint(self, i1, i2):
         constraint_1 = Constraint(i1, i2, ConstraintType.DK)
-        treshold = 0.75
         most_similar_constraint = None
-        lowest_dissimilarity = treshold
+        lowest_dissimilarity = self.similarity_treshold
+
         for constraint_2 in self.constraint_index:
-            dissimilarity = get_dissimilarity(constraint_1, constraint_2, self.data)
-            if dissimilarity < treshold and dissimilarity < lowest_dissimilarity:
-                most_similar_constraint = constraint_2
-                lowest_dissimilarity = dissimilarity
+            if constraint_2.type == ConstraintType.ML:
+                dissimilarity = get_dissimilarity(constraint_1, constraint_2, self.data)
+                if dissimilarity < lowest_dissimilarity:
+                    most_similar_constraint = constraint_2
+                    lowest_dissimilarity = dissimilarity
+
         if most_similar_constraint is not None:
+            self.logger.log_predicted_constraint(Constraint(i1, i2, most_similar_constraint.type))
             return most_similar_constraint.type
         return None
+    # endregion
 
+    # region old_DK
     def try_similarity_prediction_DK(self, A, B):
         cos_threshold = 0.95
         norm_factor_theshold = 0.95  # Minimun percentage

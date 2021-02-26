@@ -9,8 +9,7 @@ class COBRASLogger:
 
         #Logging of intermediate results and constraints
         self.intermediate_results = []
-        self.all_user_constraints = []
-
+        self.queried_constraints = []
         #Algorithm phases
         self.current_phase = None
         self.algorithm_phases = []
@@ -60,13 +59,16 @@ class COBRASLogger:
         ml = []
         cl = []
         dk = []
-        for constraint in self.all_user_constraints:
-            if constraint.is_ML():
-                ml.append(constraint.get_instance_tuple())
-            elif constraint.is_CL():
-                cl.append(constraint.get_instance_tuple())
-            elif constraint.is_DK():
-                dk.append(constraint.get_instance_tuple())
+        for li in [self.queried_constraints, self.predicted_constraints]:
+            for constraint in li:
+                if isinstance(constraint,tuple):
+                    constraint = constraint[0]
+                if constraint.is_ML():
+                    ml.append(constraint.get_instance_tuple())
+                elif constraint.is_CL():
+                    cl.append(constraint.get_instance_tuple())
+                elif constraint.is_DK():
+                    dk.append(constraint.get_instance_tuple())
         return ml, cl, dk
 
     def log_splitlevel(self, splitlevel):
@@ -74,8 +76,7 @@ class COBRASLogger:
 
     def log_new_user_query(self, constraint,  con_length, clustering_to_store):
         #keep it in all_user_constraints
-        self.all_user_constraints.append(constraint)
-
+        self.queried_constraints.append(constraint)
         #current phases
         self.algorithm_phases.append(self.current_phase)
 
@@ -87,3 +88,6 @@ class COBRASLogger:
         self.reused_constraints.extend(self.phase_constraints.intersection(self.constraints_previously_used))
         self.constraints_previously_used.update(self.phase_constraints)
         self.phase_constraints = set(())
+
+    def log_predicted_constraint(self, constraint):
+        self.predicted_constraints.append(constraint)

@@ -225,6 +225,4 @@ def print_sorted_datasets():
 
 
 if __name__ == '__main__':
-    print_sorted_datasets()
-    # show_simple_datasets()
-    # convert_data_set("ionosphere")
+    show_simple_datasets()
