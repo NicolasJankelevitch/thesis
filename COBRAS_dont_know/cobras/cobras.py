@@ -31,6 +31,8 @@ class COBRAS:
                  similarity_pred: bool = False,
                  randomforest_pred: bool = False,
                  cobras_plus: bool = False,
+                 select_next_query: bool = False,
+                 intra_pred: bool = False,
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
@@ -53,6 +55,9 @@ class COBRAS:
         self.randomforest_pred = randomforest_pred
         # COBRAS+
         self.cobras_plus = cobras_plus
+        # select next query in case of dont know
+        self.select_next_query = select_next_query
+        self.intra_pred = intra_pred  # if true, DK prediction intra_cluster, if false: DK pred inter_cluster
 
         # init cobras_cluster_algo
         self.cluster_algo = cluster_algo
@@ -297,31 +302,43 @@ class COBRAS:
 
             merged = False
             for x, y in cluster_pairs:
-                if self.cannot_link_between_clusters(x, y) \
-                        or self.dont_know_between_clusters(x, y):
+                ret_val = self.merge_loop_func(x, y)
+                if ret_val == "continue":
                     continue
-
-                must_link_exists = None
-                if self.must_link_between_clusters(x, y):
-                    must_link_exists = True
-
-                if self.querier.query_limit_reached():
+                if ret_val == "qlr":
                     query_limit_reached = True
                     break
-
-                # no reuse!
-                if must_link_exists is None:
-                    new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
-                    must_link_exists = new_constraint.is_ML()
-
-                if must_link_exists:
-                    x.super_instances.extend(y.super_instances)
+                if ret_val == "ml":
                     clustering_to_merge.clusters.remove(y)
                     merged = True
                     break
+
         fully_merged = not query_limit_reached and not merged
         self.logger.end_merging_phase()
         return fully_merged
+
+    def merge_loop_func(self, x, y, nested=False):
+        if self.cannot_link_between_clusters(x, y):
+            return "continue"
+        if self.dont_know_between_clusters(x, y):
+            return "continue"
+
+        must_link_exists = None
+        if self.must_link_between_clusters(x, y):
+            must_link_exists = True
+
+        if self.querier.query_limit_reached():
+            return "qlr"
+
+        # no reuse!
+        if must_link_exists is None:
+            new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
+            if new_constraint.is_ML():
+                must_link_exists = True
+
+        if must_link_exists:
+            x.super_instances.extend(y.super_instances)
+            return "ml"
 
     def cannot_link_between_clusters(self, c1, c2):
         """
@@ -356,14 +373,22 @@ class COBRAS:
             if reused_constraint is not None:
                 return reused_constraint
         si1, si2 = c1.get_comparison_points(c2)
-        return self.get_new_constraint(si1.representative_idx, si2.representative_idx, purpose)
+        return self.get_constraint_between_superinstances(si1, si2, purpose)
 
     def get_constraint_between_superinstances(self, s1: SuperInstance, s2: SuperInstance, purpose, reuse=True):
         if reuse:
             reused_constraint = self.check_constraint_reuse_between_representatives(s1, s2)
             if reused_constraint is not None:
                 return reused_constraint
-        return self.get_new_constraint(s1.representative_idx, s2.representative_idx, purpose)
+        constraint = self.get_new_constraint(s1.representative_idx, s2.representative_idx, purpose)
+
+        if self.select_next_query and constraint.type == ConstraintType.DK and not self.querier.query_limit_reached():
+            if self.intra_pred:
+                extra_constr = self.intra_super_instance_prediction(s1, s2)
+                constraint.type = extra_constr.type
+                self.logger.log_prediction_pair((constraint, extra_constr))
+
+        return constraint
 
     def get_constraint_between_instances(self, instance1, instance2, purpose, reuse=True):
         reused_constraint = None
@@ -445,7 +470,7 @@ class COBRAS:
         constraint_type = self.querier.query(instance1, instance2)
 
         self.logger.log_new_user_query(Constraint(instance1, instance2, constraint_type, purpose=purpose),
-                                        self.get_constraint_length(), self.clustering_to_store)
+                                       self.get_constraint_length(), self.clustering_to_store)
         return constraint_type
 
     def find_similar_constraint(self, i1, i2):
@@ -464,6 +489,27 @@ class COBRAS:
             self.logger.log_predicted_constraint(Constraint(i1, i2, most_similar_constraint.type))
             return most_similar_constraint.type
         return None
+
+    # endregion
+
+    # region new_DK
+    def intra_super_instance_prediction(self, si1: SuperInstance, si2: SuperInstance):
+        #min_dist = float('inf')
+        max_dist = 0
+        pair = None
+        for x in si1.indices:
+            for y in si2.indices:
+                dist = np.linalg.norm(x - y)
+                if dist > max_dist:
+                    max_dist = dist
+                    pair = (x, y)
+        if pair is None:
+            raise Exception("Maximum distance is 0")
+        type = self.query_querier(pair[0], pair[1], purpose="intra_pred")
+        new_constraint = Constraint(pair[0], pair[1], type)
+        self.constraint_index.add_constraint(new_constraint)
+        return new_constraint
+
     # endregion
 
     # region old_DK

@@ -1,5 +1,7 @@
 import time
 
+from cobras.constraints.constraint_type import ConstraintType
+
 
 class COBRASLogger:
     def __init__(self):
@@ -35,6 +37,9 @@ class COBRASLogger:
         # check max split reached
         self.max_split_reached = 0
 
+        self.predicted_pairs = []
+        self.extra_asked = []
+
     def log_start(self):
         self.start_time = time.time()
 
@@ -59,7 +64,7 @@ class COBRASLogger:
         ml = []
         cl = []
         dk = []
-        for li in [self.queried_constraints, self.predicted_constraints]:
+        for li in [self.queried_constraints]:#, self.predicted_constraints]:
             for constraint in li:
                 if isinstance(constraint,tuple):
                     constraint = constraint[0]
@@ -91,3 +96,14 @@ class COBRASLogger:
 
     def log_predicted_constraint(self, constraint):
         self.predicted_constraints.append(constraint)
+
+    def log_prediction_pair(self, pair): #item 1 in pair is original DK constraint, item 2 is asked used to predict 1
+        ctype = None
+        if pair[0].type is ConstraintType.ML:
+            ctype = "ML"
+        elif pair[0].type is ConstraintType.CL:
+            ctype = "CL"
+        else:
+            ctype = "DK"
+        self.log_predicted_constraint((pair[0].i1, pair[0].i2, ctype))
+        self.extra_asked.append((pair[1].i1, pair[1].i2, ctype))

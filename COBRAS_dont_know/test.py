@@ -62,5 +62,6 @@ def calculate_correct_predictions(predictions, target):
     return correct, incorrect
 
 if __name__ == '__main__':
-    #test_2(["aggregation"])
-    test_2(["faces_eyes_imagenet"])
+    li1 = [1,2,3,4]
+    li2 = [5,6,7,8]
+    print(zip(li1, li2))
