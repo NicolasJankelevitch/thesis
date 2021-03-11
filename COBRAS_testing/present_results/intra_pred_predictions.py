@@ -11,7 +11,6 @@ def plot_overall_predictions(comparison_name, test_names):
     ml_list = []
     dk_list = []
     for test_name in test_names:
-        vals = []
         test_path = os.path.join(os.path.join(FOLD_RESULT_DIR, test_name), "clusterings")
         cls = 0
         mls = 0
@@ -20,6 +19,7 @@ def plot_overall_predictions(comparison_name, test_names):
             dataset_folder = os.path.join(test_path, dataset_name)
             for f in os.listdir(dataset_folder):
                 file = os.path.join(dataset_folder, f)
+                #print(file)
                 with open(file) as d:
                     data = d.read()
                     dictionary = ast.literal_eval(data)
@@ -31,11 +31,12 @@ def plot_overall_predictions(comparison_name, test_names):
                             mls += 1
                         elif constr == "DK":
                             dks += 1
-            cl_list.append(cls)
-            ml_list.append(mls)
-            dk_list.append(dks)
-    output_file_name = os.path.join(FIGURE_DIR, comparison_name, "assignments")
-    draw_plot(output_file_name, test_names, cl_list, ml_list, dk_list)
+        print("{}:\n\tCLS: {}\n\tMLS: {}\n\tDKS: {}\n\n".format(test_name, cls, mls, dks))
+        #cl_list.append(cls)
+        #ml_list.append(mls)
+        #dk_list.append(dks)
+    #output_file_name = os.path.join(FIGURE_DIR, comparison_name, "assignments")
+    #draw_plot(output_file_name, test_names, cl_list, ml_list, dk_list)
 
 
 def draw_plot(output_file_name, test_names, cls, mls, dks):
@@ -96,5 +97,7 @@ def plot_predictions_per_dataset(comparison_name, test_names):
 
 
 if __name__ == '__main__':
-    #plot_overall_predictions("prediction_intra_pred_max", ["intra_pred_max10fold"])
-    plot_predictions_per_dataset("prediction_intra_pred_max", ["intra_pred_max10fold"])
+    plot_overall_predictions("intra_pred_check_preds_update1", ["KEEP_intra_pred_max_10fold",
+                                                                "KEEP_intra_pred_min_10fold",
+                                                                "KEEP_inter_pred_max_10fold",
+                                                                "KEEP_inter_pred_min_10fold"])
