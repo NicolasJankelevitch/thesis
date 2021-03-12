@@ -306,17 +306,30 @@ class COBRAS:
 
             merged = False
             for x, y in cluster_pairs:
-                ret_val = self.merge_loop_func(x, y)
-                if ret_val == "continue":
+                if self.cannot_link_between_clusters(x, y):
                     continue
-                if ret_val == "qlr":
+                if self.dont_know_between_clusters(x, y):
+                    continue
+
+                must_link_exists = None
+                if self.must_link_between_clusters(x, y):
+                    must_link_exists = True
+
+                if self.querier.query_limit_reached():
                     query_limit_reached = True
                     break
-                if ret_val == "ml":
+
+                # no reuse!
+                if must_link_exists is None:
+                    new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
+                    if new_constraint.is_ML():
+                        must_link_exists = True
+
+                if must_link_exists:
+                    x.super_instances.extend(y.super_instances)
                     clustering_to_merge.clusters.remove(y)
                     merged = True
                     break
-
         fully_merged = not query_limit_reached and not merged
         self.logger.end_merging_phase()
         return fully_merged
