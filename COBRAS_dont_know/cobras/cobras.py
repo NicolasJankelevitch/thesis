@@ -35,6 +35,7 @@ class COBRAS:
                  intra_pred: bool = False,
                  max_dist: bool = True,
                  inter_max: bool = False,
+                 posterior_inter_pred=False,
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
                  split_superinstance_selection_heur: Heuristic = SelectMostInstancesHeuristic(),
@@ -62,6 +63,7 @@ class COBRAS:
         self.intra_pred = intra_pred  # if true, DK prediction intra_cluster, if false: DK pred inter_cluster
         self.max_dist = max_dist
         self.inter_max = inter_max
+        self.posterior_inter_pred = posterior_inter_pred
 
         # init cobras_cluster_algo
         self.cluster_algo = cluster_algo
@@ -293,7 +295,7 @@ class COBRAS:
         """
         query_limit_reached = False
         merged = True
-
+        dk_pairs = []
         while merged and not self.querier.query_limit_reached():
 
             clusters_to_consider = [cluster for cluster in clustering_to_merge.clusters if not cluster.is_finished]
@@ -324,38 +326,38 @@ class COBRAS:
                     new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
                     if new_constraint.is_ML():
                         must_link_exists = True
+                    if new_constraint.is_DK():
+                        dk_pairs.append((new_constraint, x, y))
 
                 if must_link_exists:
                     x.super_instances.extend(y.super_instances)
                     clustering_to_merge.clusters.remove(y)
                     merged = True
+                    temp_dks = []
+                    for c, a, b in dk_pairs:
+                        if a is y:
+                            if b is not x:
+                                temp_dks.append((c, x, b))
+                            else:
+                                c.type = ConstraintType.ML
+                        elif b is y:
+                            if a is not x:
+                                temp_dks.append((c, a, x))
+                            else:
+                                c.type = ConstraintType.ML
+                    dk_pairs = temp_dks
                     break
+
+        if self.posterior_inter_pred:
+            for c, x, y in dk_pairs:
+                new_constr = self.inter_super_instance_max_prediction(x, y)
+                if new_constr is not None:
+                    c.type = new_constr.type
+                    self.logger.log_prediction_pair((c, new_constr))
+
         fully_merged = not query_limit_reached and not merged
         self.logger.end_merging_phase()
         return fully_merged
-
-    def merge_loop_func(self, x, y):
-        if self.cannot_link_between_clusters(x, y):
-            return "continue"
-        if self.dont_know_between_clusters(x, y):
-            return "continue"
-
-        must_link_exists = None
-        if self.must_link_between_clusters(x, y):
-            must_link_exists = True
-
-        if self.querier.query_limit_reached():
-            return "qlr"
-
-        # no reuse!
-        if must_link_exists is None:
-            new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
-            if new_constraint.is_ML():
-                must_link_exists = True
-
-        if must_link_exists:
-            x.super_instances.extend(y.super_instances)
-            return "ml"
 
     def cannot_link_between_clusters(self, c1, c2):
         """
@@ -393,7 +395,7 @@ class COBRAS:
         constr = self.get_constraint_between_superinstances(si1, si2, purpose)
         if self.select_next_query and not self.intra_pred and constr.is_DK(): # if there is a dk and inter pred is used, do:
             if self.inter_max:
-                pred_constr = self.inter_super_instance_max_prediction(c1, c2, si1, si2)
+                pred_constr = self.inter_super_instance_max_prediction(c1, c2)
             else:
                 pred_constr = self.inter_super_instance_prediction(c1, c2, si1, si2)
             if pred_constr is not None:
@@ -540,7 +542,7 @@ class COBRAS:
         new_constraint = Constraint(pair[0], pair[1], c.type)
         return new_constraint
 
-    def inter_super_instance_max_prediction(self, c1: Cluster, c2: Cluster, si1: SuperInstance, si2: SuperInstance):
+    def inter_super_instance_max_prediction(self, c1: Cluster, c2: Cluster):
         if not self.querier.query_limit_reached():
             if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
                 return None
@@ -548,8 +550,6 @@ class COBRAS:
             pair = None
             for s1 in c1.super_instances:
                 for s2 in c2.super_instances:
-                    if s1 is si1 and s2 is si2:
-                        continue
                     new_dist = np.linalg.norm(self.data[s1.representative_idx] - s2.representative_idx)
                     if new_dist > max_dist:
                         max_dist = new_dist

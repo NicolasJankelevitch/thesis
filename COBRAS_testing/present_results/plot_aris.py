@@ -70,7 +70,7 @@ def plot_overall_average_ARI(comparison_name, algo_names, line_names, dataset_na
     fig, ax = plt.subplots(figsize = (6,4))
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_ylim(0.2, 1.0)
+    ax.set_ylim(0.2, 0.5)
     texts = []
     for idx,(algo_name,line_name) in enumerate(zip(algo_names,line_names)):
         average = None
@@ -99,7 +99,7 @@ def plot_overall_average_ARI(comparison_name, algo_names, line_names, dataset_na
     plt.xlabel("number of queries")
     plt.ylabel("average ARI")
     # plt.ylim(0, 1)
-    # plt.legend()
+    #plt.legend()
     output_file_name =os.path.join(FIGURE_DIR, comparison_name, "average_ARI.png")
     os.makedirs(os.path.dirname(output_file_name), exist_ok=True)
     plt.savefig(output_file_name, dpi = 300, bbox_inches ='tight')
