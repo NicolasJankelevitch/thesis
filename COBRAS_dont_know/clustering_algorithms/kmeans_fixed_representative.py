@@ -34,6 +34,7 @@ class KmeansFixedRepresentative(ClusterAlgorithm):
         distances = np.zeros((n, k))
 
         error = np.linalg.norm(centers_new - centers_old)
+        print(error)
         n_runs = 10
         # When, after an update, the estiame of that center stays the same, exit loop
         runs = 0

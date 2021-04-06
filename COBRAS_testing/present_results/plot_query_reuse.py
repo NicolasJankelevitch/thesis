@@ -27,6 +27,7 @@ def calculate_and_plot_query_reuse(comparison_name, test_names):
                 with open(file) as d:
                     data = d.read()
                     dictionary = ast.literal_eval(data)
+                    print(dictionary.keys())
                     reused_constraints = dictionary['reused_constraints']
                     unique_constraints = len(dictionary['mls']) + len(dictionary['cls']) + len(dictionary['dks'])
                     unique_reused_constraints = get_unique_set(reused_constraints)
@@ -73,4 +74,4 @@ def get_unique_set(constraints):
     return return_set
 
 if __name__ == '__main__':
-    calculate_and_plot_query_reuse("new_counting", ["standard_COBRAS", "6", "9", "10"])
+    calculate_and_plot_query_reuse("counting_1", ["COBRAS_10fold_no_dk", "Smart_represenatative_selection", "Fixed_representative_K-means", "Fixed_representative_K+1-means"])

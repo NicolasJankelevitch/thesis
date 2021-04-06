@@ -61,7 +61,15 @@ def calculate_correct_predictions(predictions, target):
             incorrect += 1
     return correct, incorrect
 
+
+def run_cobras():
+    dataset = Dataset("ionosphere")
+    querier = LabelQuerier(dataset.target, 100)
+    splitstrat = StandardSplitLevelEstimationStrategyAlwayskmeans(SelectMostInstancesHeuristic())
+    clusterer = COBRAS(cluster_algo=KmeansFixedRepresentative(),
+                       superinstance_builder=SuperInstance_select_representative_Builder(),
+                       splitlevel_strategy=splitstrat)
+    print(clusterer.fit(dataset.data, None, None, querier))
+
 if __name__ == '__main__':
-    li1 = [1,2,3,4]
-    li2 = [5,6,7,8]
-    print(zip(li1, li2))
+    run_cobras()
