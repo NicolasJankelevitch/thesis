@@ -34,7 +34,6 @@ class COBRAS:
                  select_next_query: bool = False,
                  intra_pred: bool = False,
                  max_dist: bool = True,
-                 inter_max: bool = False,
                  posterior_inter_pred=False,
                  cluster_algo: ClusterAlgorithm = KMeansClusterAlgorithm(),
                  superinstance_builder: SuperInstanceBuilder = KMeans_SuperinstanceBuilder(),
@@ -62,7 +61,6 @@ class COBRAS:
         self.select_next_query = select_next_query
         self.intra_pred = intra_pred  # if true, DK prediction intra_cluster, if false: DK pred inter_cluster
         self.max_dist = max_dist
-        self.inter_max = inter_max
         self.posterior_inter_pred = posterior_inter_pred
 
         # init cobras_cluster_algo
@@ -394,10 +392,7 @@ class COBRAS:
         si1, si2 = c1.get_comparison_points(c2)
         constr = self.get_constraint_between_superinstances(si1, si2, purpose)
         if self.select_next_query and not self.intra_pred and constr.is_DK(): # if there is a dk and inter pred is used, do:
-            if self.inter_max:
-                pred_constr = self.inter_super_instance_max_prediction(c1, c2)
-            else:
-                pred_constr = self.inter_super_instance_prediction(c1, c2, si1, si2)
+            pred_constr = self.inter_super_instance_prediction_alt(c1, c2, si1, si2)
             if pred_constr is not None:
                 constr.type = pred_constr.type
                 self.logger.log_prediction_pair((constr, pred_constr))
@@ -527,7 +522,7 @@ class COBRAS:
         pair = None
         for x in si1.indices:
             for y in si2.indices:
-                dist = np.linalg.norm(self.data[x] - self.data[y]) #
+                dist = np.linalg.norm(self.data[x] - self.data[y])
                 if self.max_dist:
                     if dist > m_dist:
                         m_dist = dist
@@ -555,6 +550,31 @@ class COBRAS:
                         max_dist = new_dist
                         pair = (s1, s2)
             return self.get_constraint_between_instances(pair[0].representative_idx, pair[1].representative_idx, "inter_max")
+
+    def inter_super_instance_prediction_alt(self, c1:Cluster, c2: Cluster, si1: SuperInstance, si2: SuperInstance):
+        if not self.querier.query_limit_reached():
+            cur_dist = float('inf')
+            if self.max_dist:
+                cur_dist = 0
+            pair = None
+            if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
+                return None
+            for supins1 in c1.super_instances:
+                for supins2 in c2.super_instances:
+                    if (supins1 == si1 and supins2 == si2) or (supins1 == si2 and supins2 == si1):
+                        continue
+                    new_dist = np.linalg.norm(self.data[supins1.representative_idx] - self.data[supins2.representative_idx])
+                    if self.max_dist:
+                        if new_dist > cur_dist:
+                            cur_dist = new_dist
+                            pair = (supins1, supins2)
+                    else:
+                        if new_dist < cur_dist:
+                            cur_dist = new_dist
+                            pair = (supins1, supins2)
+            if pair is None:
+                print("Pair is NONE")
+            return self.get_constraint_between_superinstances(pair[0], pair[1], purpose="inter_si")
 
     def inter_super_instance_prediction(self, c1: Cluster, c2: Cluster, si1: SuperInstance, si2: SuperInstance):
         if not self.querier.query_limit_reached():
