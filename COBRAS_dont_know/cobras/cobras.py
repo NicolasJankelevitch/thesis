@@ -324,38 +324,96 @@ class COBRAS:
                     new_constraint = self.get_constraint_between_clusters(x, y, "merging", reuse=True)
                     if new_constraint.is_ML():
                         must_link_exists = True
-                    if new_constraint.is_DK():
+                    if self.posterior_inter_pred and new_constraint.is_DK():
                         dk_pairs.append((new_constraint, x, y))
 
                 if must_link_exists:
                     x.super_instances.extend(y.super_instances)
                     clustering_to_merge.clusters.remove(y)
                     merged = True
-                    temp_dks = []
-                    for c, a, b in dk_pairs:
-                        if a is y:
-                            if b is not x:
-                                temp_dks.append((c, x, b))
-                            else:
-                                c.type = ConstraintType.ML
-                        elif b is y:
-                            if a is not x:
-                                temp_dks.append((c, a, x))
-                            else:
-                                c.type = ConstraintType.ML
-                    dk_pairs = temp_dks
+                    if self.posterior_inter_pred:
+                        dk_pairs = self.update_dk_list(dk_pairs, x, y)
                     break
 
         if self.posterior_inter_pred:
-            for c, x, y in dk_pairs:
-                new_constr = self.inter_super_instance_max_prediction(x, y)
-                if new_constr is not None:
-                    c.type = new_constr.type
-                    self.logger.log_prediction_pair((c, new_constr))
+            # dk_pairs is a queue with pop(0), append()
+            # dk_pairs are not really sorted because of updates
+            # Queue best sorteren op een goeie volgorde "wat is goeie volgorde?"
+            # note: you can use a dictionary to speed the search up
+            # dictionary van superinstance representatives --> constraint vinden die je moet aanpassen
+            while len(dk_pairs) > 0:
+                c, x, y = dk_pairs.pop(0)  # the first element of the queue
+                #s1, s2 = self.get_sis(c, x, y)
+                dk = True
+                while dk:
+                    new_constr = self.inter_super_instance_prediction(x, y) #, s1, s2)
+                    if new_constr is not None:
+                        c.type = new_constr.type  # I don't know
+                        if new_constr.is_ML():
+                            # do the merge
+                            x.super_instances.extend(y.super_instances)
+                            clustering_to_merge.clusters.remove(y)
+                            # update the queue
+                            dk_pairs = self.update_dk_list(dk_pairs, x, y)
+                            dk = False
+                        if new_constr.is_CL():
+                            dk = False
+                    else:
+                        dk = False
+        # other idea before merging save super-instances
+        # merging phase gedaan, je hebt daarna een aantal don't knows opgelost
+        # herstel de opgeslagen super-instances en herstart de merging phase
+
+        # if self.posterior_inter_pred:
+        #     updated = True
+        #     while updated:
+        #         updated = False
+        #         for c, x, y in dk_pairs:
+        #             s1, s2 = self.get_sis(c, x, y)
+        #             new_constr = self.inter_super_instance_prediction(x, y, s1, s2)
+        #             if new_constr is not None:
+        #                 c.type = new_constr.type
+        #                 if new_constr.is_ML():
+        #                     x.super_instances.extend(y.super_instances)
+        #                     clustering_to_merge.clusters.remove(y)
+        #                     dk_pairs = self.update_dk_list(dk_pairs, x, y)
+        #                     updated = True
+        #                     break
+        #                 # TODO: if DK -> ?
 
         fully_merged = not query_limit_reached and not merged
         self.logger.end_merging_phase()
         return fully_merged
+
+    def update_dk_list(self, dk_pairs, x, y):
+        temp_dks = []
+        for c, a, b in dk_pairs:
+            if a is y:
+                if b is not x:
+                    temp_dks.append((c, x, b))
+                else:
+                    c.type = ConstraintType.ML
+            elif b is y:
+                if a is not x:
+                    temp_dks.append((c, a, x))
+                else:
+                    c.type = ConstraintType.ML
+        return temp_dks
+
+    def get_sis(self, constraint, c1, c2):
+        si1 = None
+        si2 = None
+        for s in c1.super_instances:
+            if constraint.i1 in s.indices or constraint.i2 in s.indices:
+                si1 = s
+                break
+        for s in c2.super_instances:
+            if constraint.i1 in s.indices or constraint.i2 in s.indices:
+                si2 = s
+                break
+        if si1 is None or si2 is None:
+            raise Exception("Instance not found")
+        return si1, si2
 
     def cannot_link_between_clusters(self, c1, c2):
         """
@@ -391,11 +449,11 @@ class COBRAS:
                 return reused_constraint
         si1, si2 = c1.get_comparison_points(c2)
         constr = self.get_constraint_between_superinstances(si1, si2, purpose)
-        if self.select_next_query and not self.intra_pred and constr.is_DK(): # if there is a dk and inter pred is used, do:
-            pred_constr = self.inter_super_instance_prediction_alt(c1, c2, si1, si2)
+        if self.select_next_query and not self.intra_pred and constr.is_DK() and not self.posterior_inter_pred:  # if there is a dk and inter pred is used, do:
+            pred_constr = self.inter_super_instance_prediction(c1, c2) #, si1, si2)
             if pred_constr is not None:
                 constr.type = pred_constr.type
-                self.logger.log_prediction_pair((constr, pred_constr))
+                # self.logger.log_prediction_pair((constr, pred_constr))
         return constr
 
     def get_constraint_between_superinstances(self, s1: SuperInstance, s2: SuperInstance, purpose, reuse=True):
@@ -407,8 +465,8 @@ class COBRAS:
 
         if self.select_next_query and constraint.is_DK() and not self.querier.query_limit_reached() and self.intra_pred:
             extra_constr = self.intra_super_instance_prediction(s1, s2)
-            constraint.type = extra_constr.type
-            self.logger.log_prediction_pair((constraint, extra_constr))
+            if extra_constr is not None:
+                constraint.type = extra_constr.type
 
         return constraint
 
@@ -516,101 +574,51 @@ class COBRAS:
 
     # region new_DK
     def intra_super_instance_prediction(self, si1: SuperInstance, si2: SuperInstance):
-        m_dist = float('inf')
-        if self.max_dist:
-            m_dist = 0
+        if len(si1.indices) == 1 and len(si2.indices) == 1:
+            return None
         pair = None
-        for x in si1.indices:
-            for y in si2.indices:
-                dist = np.linalg.norm(self.data[x] - self.data[y])
-                if self.max_dist:
-                    if dist > m_dist:
-                        m_dist = dist
-                        pair = (x, y)
-                else:
-                    if dist < m_dist:
-                        m_dist = dist
-                        pair = (x, y)
+        indice_pairs = [(i1, i2) for i1, i2 in itertools.product(si1.indices, si2.indices)
+                        if not (i1 == si1.representative_idx and i2 == si2.representative_idx)]
+        indice_pairs = sorted(indice_pairs, key=lambda p: np.linalg.norm(self.data[p[0]] - self.data[p[1]]))
+        if self.max_dist:
+            pair = indice_pairs[-1]
+        else:
+            pair = indice_pairs[0]
         if pair is None:
             raise Exception("No pair found")
         c = self.get_constraint_between_instances(pair[0], pair[1], purpose="intra_pred")
-        new_constraint = Constraint(pair[0], pair[1], c.type)
-        return new_constraint
+        self.logger.log_extra_constraint(c)
+        return c
 
-    def inter_super_instance_max_prediction(self, c1: Cluster, c2: Cluster):
+    def inter_super_instance_prediction(self, c1: Cluster, c2: Cluster):  # , si1: SuperInstance, si2: SuperInstance):
         if not self.querier.query_limit_reached():
-            if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
-                return None
-            max_dist = 0
+            index = -1
+            if not self.max_dist:
+                index = 0
+            #if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
+             #   return None
+            super_instance_pairs = [(s1, s2) for s1, s2 in itertools.product(c1.super_instances, c2.super_instances)]
+            # if not ((s1 == si1 and s2 == si2) or (s1 == si2 and s2 == si1))]
+            super_instance_pairs = sorted(super_instance_pairs, key=lambda x: np.linalg.norm(
+                self.data[x[0].representative_idx] - self.data[x[1].representative_idx]))
             pair = None
-            for s1 in c1.super_instances:
-                for s2 in c2.super_instances:
-                    new_dist = np.linalg.norm(self.data[s1.representative_idx] - s2.representative_idx)
-                    if new_dist > max_dist:
-                        max_dist = new_dist
-                        pair = (s1, s2)
-            return self.get_constraint_between_instances(pair[0].representative_idx, pair[1].representative_idx, "inter_max")
-
-    def inter_super_instance_prediction_alt(self, c1:Cluster, c2: Cluster, si1: SuperInstance, si2: SuperInstance):
-        if not self.querier.query_limit_reached():
-            cur_dist = float('inf')
-            if self.max_dist:
-                cur_dist = 0
-            pair = None
-            if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
-                return None
-            for supins1 in c1.super_instances:
-                for supins2 in c2.super_instances:
-                    if (supins1 == si1 and supins2 == si2) or (supins1 == si2 and supins2 == si1):
-                        continue
-                    new_dist = np.linalg.norm(self.data[supins1.representative_idx] - self.data[supins2.representative_idx])
-                    if self.max_dist:
-                        if new_dist > cur_dist:
-                            cur_dist = new_dist
-                            pair = (supins1, supins2)
-                    else:
-                        if new_dist < cur_dist:
-                            cur_dist = new_dist
-                            pair = (supins1, supins2)
-            if pair is None:
-                print("Pair is NONE")
-            return self.get_constraint_between_superinstances(pair[0], pair[1], purpose="inter_si")
-
-    def inter_super_instance_prediction(self, c1: Cluster, c2: Cluster, si1: SuperInstance, si2: SuperInstance):
-        if not self.querier.query_limit_reached():
-            cur_dist = float('inf')
-            if self.max_dist:
-                cur_dist = 0
-            pair = None
-            if len(c1.super_instances) == 1 and len(c2.super_instances) == 1:
-                return None
-            for si in c1.super_instances:
-                if si is si1:
-                    continue
-                new_dist = np.linalg.norm(self.data[si.representative_idx] - self.data[si2.representative_idx])
-                if self.max_dist:
-                    if new_dist > cur_dist:
-                        cur_dist = new_dist
-                        pair = (si, si2)
+            pair_found = False
+            while not pair_found:
+                if len(super_instance_pairs) == 0:
+                    break
+                pair = super_instance_pairs[index]
+                constraint = self.check_constraint_reuse_between_instances(pair[0].representative_idx,
+                                                                           pair[1].representative_idx)
+                if constraint is None or not constraint.is_DK():
+                    pair_found = True
                 else:
-                    if new_dist < cur_dist:
-                        cur_dist = new_dist
-                        pair = (si, si2)
-            for si in c2.super_instances:
-                if si is si2:
-                    continue
-                new_dist = np.linalg.norm(self.data[si.representative_idx] - self.data[si2.representative_idx])
-                if self.max_dist:
-                    if new_dist > cur_dist:
-                        cur_dist = new_dist
-                        pair = (si, si1)
-                else:
-                    if new_dist < cur_dist:
-                        cur_dist = new_dist
-                        pair = (si, si2)
-            if pair is None:
-                print("Pair is NONE")
-            return self.get_constraint_between_superinstances(pair[0], pair[1], purpose="inter_si")
+                    super_instance_pairs.pop(index)
+            if not pair_found:
+                return None
+            constr = self.get_constraint_between_superinstances(pair[0], pair[1], purpose="inter_si")
+            self.logger.log_extra_constraint(constr)
+
+            return constr
 
     # endregion
 

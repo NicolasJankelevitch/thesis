@@ -37,9 +37,6 @@ class COBRASLogger:
         # check max split reached
         self.max_split_reached = 0
 
-        self.predicted_pairs = []
-        self.extra_asked = []
-
     def log_start(self):
         self.start_time = time.time()
 
@@ -97,13 +94,13 @@ class COBRASLogger:
     def log_predicted_constraint(self, constraint):
         self.predicted_constraints.append(constraint)
 
-    def log_prediction_pair(self, pair): #item 1 in pair is original DK constraint, item 2 is asked used to predict 1
+    def log_extra_constraint(self, constr): #item 1 in pair is original DK constraint, item 2 is asked used to predict 1
         ctype = None
-        if pair[0].type is ConstraintType.ML:
+        if constr.type is ConstraintType.ML:
             ctype = "ML"
-        elif pair[0].type is ConstraintType.CL:
+        elif constr.type is ConstraintType.CL:
             ctype = "CL"
         else:
             ctype = "DK"
-        self.log_predicted_constraint((pair[0].i1, pair[0].i2, ctype))
-        self.extra_asked.append((pair[1].i1, pair[1].i2, ctype))
+        self.predicted_constraints.append((constr.i1, constr.i2, ctype))
+        #self.extra_asked.append((pair[1].i1, pair[1].i2, ctype))

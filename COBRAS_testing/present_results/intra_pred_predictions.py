@@ -31,12 +31,12 @@ def plot_overall_predictions(comparison_name, test_names):
                             mls += 1
                         elif constr == "DK":
                             dks += 1
-        print("{}:\n\tCLS: {}\n\tMLS: {}\n\tDKS: {}\n\n".format(test_name, cls, mls, dks))
-        #cl_list.append(cls)
-        #ml_list.append(mls)
-        #dk_list.append(dks)
-    #output_file_name = os.path.join(FIGURE_DIR, comparison_name, "assignments")
-    #draw_plot(output_file_name, test_names, cl_list, ml_list, dk_list)
+        # print("{}:\n\tCLS: {}\n\tMLS: {}\n\tDKS: {}\n\n".format(test_name, cls, mls, dks))
+        cl_list.append(cls)
+        ml_list.append(mls)
+        dk_list.append(dks)
+    output_file_name = os.path.join(FIGURE_DIR, comparison_name, "assignments")
+    draw_plot(output_file_name, test_names, cl_list, ml_list, dk_list)
 
 
 def draw_plot(output_file_name, test_names, cls, mls, dks):
