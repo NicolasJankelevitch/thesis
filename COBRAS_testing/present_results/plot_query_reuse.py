@@ -27,7 +27,6 @@ def calculate_and_plot_query_reuse(comparison_name, test_names):
                 with open(file) as d:
                     data = d.read()
                     dictionary = ast.literal_eval(data)
-                    print(dictionary.keys())
                     reused_constraints = dictionary['reused_constraints']
                     unique_constraints = len(dictionary['mls']) + len(dictionary['cls']) + len(dictionary['dks'])
                     unique_reused_constraints = get_unique_set(reused_constraints)

@@ -10,7 +10,7 @@ from clustering_algorithms.kmeans_fixed_representative import KmeansFixedReprese
 from cobras.super_instances.superinstance_select_representative import SuperInstance_select_representative_Builder
 from util.visualizer import plot_clustering
 
-def test_1(dataset_names):
+def een_test_1(dataset_names):
     # dataset_names = ['faces_eyes_imagenet'] # Dataset.get_standard_dataset_names()
     for dataset_name in dataset_names:
         data = Dataset(dataset_name)
@@ -31,7 +31,7 @@ def test_1(dataset_names):
         print("MLs: ", len(ml))
         print("CLs: ", len(cl))
 
-def test_2(datatset_names):
+def een_test_2(datatset_names):
     for dataset_name in datatset_names:
         data = Dataset(dataset_name)
         querier = LabelQuerier(data.target, 100)
@@ -49,6 +49,7 @@ def test_2(datatset_names):
                                                                                              correct_predictions,
                                                                                              incorrect_predictions))
         print(len(ml)+len(cl))
+
 def calculate_correct_predictions(predictions, target):
     correct = 0
     incorrect = 0
@@ -62,14 +63,14 @@ def calculate_correct_predictions(predictions, target):
     return correct, incorrect
 
 
-def run_cobras():
+def run_dees():
     dataset = Dataset("ionosphere")
     querier = LabelQuerier(dataset.target, 100)
     splitstrat = StandardSplitLevelEstimationStrategyAlwayskmeans(SelectMostInstancesHeuristic())
-    clusterer = COBRAS(cluster_algo=KmeansFixedRepresentative(),
-                       superinstance_builder=SuperInstance_select_representative_Builder(),
-                       splitlevel_strategy=splitstrat)
-    print(clusterer.fit(dataset.data, None, None, querier))
+    clusterer = COBRAS()
+    #clusterer = COBRAS(cluster_algo=KmeansFixedRepresentative(), superinstance_builder=SuperInstance_select_representative_Builder(),splitlevel_strategy=splitstrat)
+    print("done")
+    clusterer.fit(dataset.data, None, None, querier)
 
 if __name__ == '__main__':
-    run_cobras()
+    run_dees()

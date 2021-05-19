@@ -168,7 +168,7 @@ class COBRAS:
         # split to_split into new clusters
         split_level = self.determine_split_level(to_split)
         new_super_instances = self.split_superinstance(to_split, split_level)
-
+        #print(len(new_super_instances), " - ", split_level)
         new_clusters = self.add_new_clusters_from_split(new_super_instances)
 
         if not new_clusters:
@@ -203,11 +203,15 @@ class COBRAS:
         options = []
         for cluster in self.clustering.clusters:
             if cluster.is_pure:
+                #print("IS PURE")
                 continue
             if cluster.is_finished:
+                #print("IS FINISHED")
                 continue
             for superinstance in cluster.super_instances:
                 if superinstance.tried_splitting:
+                    #print(self.data[superinstance.indices])
+                    #("TRIED SPLITTING")
                     continue
                 if len(superinstance.indices) == 1:
                     continue
@@ -245,7 +249,6 @@ class COBRAS:
                 self.cluster_algo.parent_repr_idx = si.representative_idx
             # cluster the instances of the superinstance
             clusters = self.cluster_algo.cluster(self.data, si.indices, k, [], [])
-
         # based on the resulting clusters make new superinstances
         # superinstances with no training instances are assigned to the closest superinstance with training instances
         training = []

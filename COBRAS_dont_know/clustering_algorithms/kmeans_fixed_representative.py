@@ -20,7 +20,6 @@ class KmeansFixedRepresentative(ClusterAlgorithm):
         n = used_data.shape[0]
         # nr of features
         c = used_data.shape[1]
-
         # generate random centers, here we use sigma and mean to ensure it represents the whole data
         mean = np.mean(used_data, axis=0)
         std = np.std(used_data, axis=0)
@@ -34,7 +33,6 @@ class KmeansFixedRepresentative(ClusterAlgorithm):
         distances = np.zeros((n, k))
 
         error = np.linalg.norm(centers_new - centers_old)
-        print(error)
         n_runs = 10
         # When, after an update, the estiame of that center stays the same, exit loop
         runs = 0
@@ -51,5 +49,5 @@ class KmeansFixedRepresentative(ClusterAlgorithm):
             centers_new[k - 1] = centers_old[k - 1]
             error = np.linalg.norm(centers_new - centers_old)
             runs = runs + 1
-
+        #print(clusters)
         return clusters

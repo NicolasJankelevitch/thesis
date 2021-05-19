@@ -47,4 +47,6 @@ class KMeansClusterAlgorithm(ClusterAlgorithm):
         km.fit(data[indices, :])
 
         # return the labels as a list of integers
-        return km.labels_.astype(np.int)
+        ret = km.labels_.astype(np.int)
+        #print(ret)
+        return ret
